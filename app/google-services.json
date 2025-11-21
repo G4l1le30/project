@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "268437505488",
+    "project_id": "final-ca080",
+    "storage_bucket": "final-ca080.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:268437505488:android:d072c6fe0da69e953a65d5",
+        "android_client_info": {
+          "package_name": "com.example.umkami"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFUMmrgyGGtib-lH7lhQosv2IUWoeqmHU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
