@@ -71,7 +71,11 @@ dependencies {
 
     // Coil
     implementation("io.coil-kt:coil-compose:2.6.0")
+    //maps api
+    implementation("com.google.maps.android:maps-compose:3.0.0") // Pastikan versi terbaru
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
 
+    implementation("androidx.compose.material:material-icons-extended")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

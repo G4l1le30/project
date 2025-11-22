@@ -20,24 +20,26 @@ fun DetailScreen(
     navController: NavController
 ) {
     val vm: DetailViewModel = viewModel(
-        factory = DetailViewModel.Factory(umkmId ?: "") // Menggunakan Factory
+        factory = DetailViewModel.Factory(umkmId ?: "")
     )
-    val state = vm.uiState.collectAsState().value // Mengumpulkan DetailUiState
+
+    val state = vm.uiState.collectAsState().value
 
     if (state.isLoading) {
         LoadingView()
         return
     }
 
-    val umkm = state.umkm ?: return // Jika data umkm null, jangan tampilkan konten
+    val umkm = state.umkm ?: return
 
     DetailContent(
         name = umkm.name,
         imageUrl = umkm.imageUrl,
         description = umkm.description,
         category = umkm.category,
-        menuItems = state.menuItems.map { it.name }, // Map ke nama menu
-        serviceItems = state.serviceItems.map { it.service }, // Map ke nama jasa
+        menuItems = state.menuItems.map { it.name },
+        serviceItems = state.serviceItems.map { it.service },
+        reviews = state.reviews,   // ⭐ Ambil review dinamiss dari Firebase
         onBack = { navController.popBackStack() }
     )
 }
@@ -62,6 +64,7 @@ fun DetailContent(
     category: String,
     menuItems: List<String>,
     serviceItems: List<String>,
+    reviews: List<String>,   // ⭐ Reviews dikirim dari DetailScreen
     onBack: () -> Unit
 ) {
     Column(
@@ -98,24 +101,59 @@ fun DetailContent(
         Text(text = description, style = MaterialTheme.typography.bodyMedium)
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Tampilkan Menu jika ada
+        // MENU
         if (menuItems.isNotEmpty()) {
             Text("Menu:", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
-            menuItems.forEach {
-                Text(text = "- $it")
-            }
+            menuItems.forEach { Text(text = "- $it") }
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // Tampilkan Services jika ada
+        // SERVICES
         if (serviceItems.isNotEmpty()) {
             Text("Services:", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
-            serviceItems.forEach {
-                Text(text = "- $it")
-            }
+            serviceItems.forEach { Text(text = "- $it") }
             Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // ⭐ REVIEW DYNAMIC SECTION
+        ReviewSection(reviews)
+    }
+}
+
+@Composable
+fun ReviewSection(reviews: List<String>) {
+    Column(Modifier.fillMaxWidth()) {
+        Text(
+            text = "Ulasan Pengunjung",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        if (reviews.isEmpty()) {
+            Text("Belum ada ulasan.", style = MaterialTheme.typography.bodyMedium)
+            return
+        }
+
+        reviews.forEach { review ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Text(
+                    text = review,
+                    modifier = Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
         }
     }
 }

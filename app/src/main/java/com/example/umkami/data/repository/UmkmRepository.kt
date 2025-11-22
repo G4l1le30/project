@@ -1,35 +1,32 @@
 package com.example.umkami.data.repository
 
+import android.util.Log
 import com.example.umkami.data.model.Umkm
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlin.coroutines.resume
 import com.example.umkami.data.model.MenuItem
 import com.example.umkami.data.model.ServiceItem
+import com.google.firebase.database.*
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 
 class UmkmRepository {
 
-    // PERBAIKAN: Mengarah ke root database
-    private val dbRoot = FirebaseDatabase.getInstance().getReference()
+    // Root reference
+    private val dbRoot = FirebaseDatabase.getInstance().reference
 
-    // Referensi untuk data umum
+    // Child references
     private val dbUmkm = dbRoot.child("umkm")
-    // Referensi untuk data spesialisasi
     private val dbMenu = dbRoot.child("umkm_menu")
     private val dbService = dbRoot.child("umkm_services")
+    private val dbReviews = dbRoot.child("reviews")
 
-    // ===============================================
-    // FUNGSI INTI
-    // ===============================================
-
-    // Fungsi suspend untuk mengambil SEMUA data dari Realtime Database
+    // ============================================================
+    // 1. Ambil semua UMKM
+    // ============================================================
     suspend fun getUmkmFromFirebase(): List<Umkm> = suspendCancellableCoroutine { continuation ->
         dbUmkm.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val umkmList = mutableListOf<Umkm>()
+
                 for (umkmSnapshot in snapshot.children) {
                     try {
                         val umkm = umkmSnapshot.getValue(Umkm::class.java)
@@ -37,71 +34,108 @@ class UmkmRepository {
                             umkm.id = umkmSnapshot.key ?: ""
                             umkmList.add(umkm)
                         } else {
-                            // Tambahkan logging untuk data null
-                            println("DEBUG: Gagal mem-parsing UMKM. Objek null ditemukan di key: ${umkmSnapshot.key}")
+                            Log.e("UmkmRepository", "Null object at key: ${umkmSnapshot.key}")
                         }
                     } catch (e: Exception) {
-                        // Tambahkan logging jika terjadi error deserialisasi
-                        println("ERROR MAPPING: Gagal memetakan data UMKM untuk key: ${umkmSnapshot.key}. Error: ${e.message}")
+                        Log.e("UmkmRepository", "Mapping error at key ${umkmSnapshot.key}: ${e.message}")
                     }
                 }
+
                 if (continuation.isActive) continuation.resume(umkmList)
             }
+
             override fun onCancelled(error: DatabaseError) {
+                Log.e("UmkmRepository", "Error: ${error.message}")
                 if (continuation.isActive) continuation.resume(emptyList())
             }
         })
     }
 
-    // Fungsi suspend untuk mengambil data UMKM berdasarkan ID
+    // ============================================================
+    // 2. Ambil UMKM berdasarkan ID
+    // ============================================================
     suspend fun getUmkmById(umkmId: String): Umkm? = suspendCancellableCoroutine { continuation ->
-        // Menggunakan dbUmkm
         dbUmkm.child(umkmId).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val umkm = snapshot.getValue(Umkm::class.java)
                 if (umkm != null) umkm.id = snapshot.key ?: umkmId
+
                 if (continuation.isActive) continuation.resume(umkm)
             }
+
             override fun onCancelled(error: DatabaseError) {
                 if (continuation.isActive) continuation.resume(null)
             }
         })
     }
 
-    // ===============================================
-    // FUNGSI SPESIALISASI BARU (Menu & Jasa)
-    // ===============================================
-
-    // FUNGSI BARU: Mendapatkan Menu Makanan/Minuman
+    // ============================================================
+    // 3. Ambil Menu UMKM
+    // ============================================================
     suspend fun getUmkmMenu(umkmId: String): List<MenuItem> = suspendCancellableCoroutine { continuation ->
-        // Akses node umkm_menu/umkmId
         dbMenu.child(umkmId).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                // Mapping children ke List<MenuItem>
-                val menuList = snapshot.children.mapNotNull {
-                    it.getValue(MenuItem::class.java)
-                }
+                val menuList = snapshot.children.mapNotNull { it.getValue(MenuItem::class.java) }
                 if (continuation.isActive) continuation.resume(menuList)
             }
+
             override fun onCancelled(error: DatabaseError) {
+                continuation.resume(emptyList())
+            }
+        })
+    }
+
+    // ============================================================
+    // 4. Ambil Layanan UMKM
+    // ============================================================
+    suspend fun getUmkmServices(umkmId: String): List<ServiceItem> = suspendCancellableCoroutine { continuation ->
+        dbService.child(umkmId).addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val serviceList = snapshot.children.mapNotNull { it.getValue(ServiceItem::class.java) }
+                if (continuation.isActive) continuation.resume(serviceList)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                continuation.resume(emptyList())
+            }
+        })
+    }
+
+    // ============================================================
+    // 5. Ambil Reviews UMKM (Coroutine)
+    // ============================================================
+    suspend fun getReviewsByUmkmId(umkmId: String): List<String> = suspendCancellableCoroutine { continuation ->
+        dbReviews.child(umkmId).addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+
+                val reviewList = snapshot.children.mapNotNull {
+                    it.getValue(String::class.java)
+                }
+
+                if (continuation.isActive) continuation.resume(reviewList)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("UmkmRepository", "Error getting reviews: ${error.message}")
                 if (continuation.isActive) continuation.resume(emptyList())
             }
         })
     }
 
-    // FUNGSI BARU: Mendapatkan Paket Jasa
-    suspend fun getUmkmServices(umkmId: String): List<ServiceItem> = suspendCancellableCoroutine { continuation ->
-        // Akses node umkm_services/umkmId
-        dbService.child(umkmId).addListenerForSingleValueEvent(object : ValueEventListener {
+    // ============================================================
+    // ALTERNATIF: Callback (Kalau Compose kamu butuh callback)
+    // ============================================================
+    fun getReviewsByUmkmIdCallback(umkmId: String, onResult: (List<String>) -> Unit) {
+        dbReviews.child(umkmId).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                // Mapping children ke List<ServiceItem>
-                val serviceList = snapshot.children.mapNotNull {
-                    it.getValue(ServiceItem::class.java)
+                val reviewList = snapshot.children.mapNotNull {
+                    it.getValue(String::class.java)
                 }
-                if (continuation.isActive) continuation.resume(serviceList)
+                onResult(reviewList)
             }
+
             override fun onCancelled(error: DatabaseError) {
-                if (continuation.isActive) continuation.resume(emptyList())
+                onResult(emptyList())
             }
         })
     }
