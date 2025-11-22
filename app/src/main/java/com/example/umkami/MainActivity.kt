@@ -3,28 +3,58 @@ package com.example.umkami
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.umkami.ui.theme.UmkamiTheme
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.collectAsState
-import com.example.umkami.ui.screens.HomeScreen
-import com.example.umkami.viewmodel.HomeViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+
+import com.example.umkami.ui.screens.HomeScreen
+import com.example.umkami.ui.screens.DetailScreen
+import com.example.umkami.ui.screens.SplashScreen // WAJIB DIIMPORT
+import com.example.umkami.ui.theme.UmkamiTheme
+import com.example.umkami.viewmodel.HomeViewModel
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-
             val homeVm: HomeViewModel = viewModel()
+            val navController = rememberNavController()
 
-            HomeScreen(umkmList = homeVm.umkmList.collectAsState().value)
+            UmkamiTheme {
+                NavHost(
+                    navController = navController,
+                    // PERBAIKAN: Set startDestination ke splash
+                    startDestination = "splash"
+                ) {
+                    // Rute Splash Screen (BARU)
+                    composable("splash") {
+                        SplashScreen(navController = navController)
+                    }
+
+                    // Rute Home Screen
+                    composable("home") {
+                        HomeScreen(
+                            umkmList = homeVm.umkmList.collectAsState().value,
+                            // Tidak ada error lagi jika HomeScreen.kt sudah diubah (lihat Langkah 2)
+                            onUmkmClick = { umkmId ->
+                                // Logika navigasi ke detail screen
+                                navController.navigate("detail/$umkmId")
+                            }
+                        )
+                    }
+
+                    // Rute Detail Screen
+                    composable("detail/{umkmId}") { backStackEntry ->
+                        val umkmId = backStackEntry.arguments?.getString("umkmId")
+                        DetailScreen(
+                            umkmId = umkmId,
+                            navController = navController
+                        )
+                    }
+                }
+            }
         }
     }
 }

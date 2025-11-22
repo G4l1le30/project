@@ -1,10 +1,8 @@
-// ui/screens/HomeScreen.kt
-
 package com.example.umkami.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.* // Ubah import untuk Material3
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -12,23 +10,26 @@ import coil.compose.AsyncImage
 import com.example.umkami.data.model.Umkm
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
+// Import R dihilangkan karena tidak ada error/placeholder yang digunakan
+// import com.example.umkami.R
+// import androidx.compose.ui.res.painterResource // Dihilangkan jika tidak digunakan
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(umkmList: List<Umkm>) {
+// WAJIB: Tambahkan onUmkmClick untuk navigasi
+fun HomeScreen(umkmList: List<Umkm>, onUmkmClick: (String) -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("UMKM Listings") },
+                title = { Text("UMKami Listings") },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                    // Warna bersih dan konsisten
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                ),
             )
         }
     ) { paddingValues ->
@@ -36,12 +37,13 @@ fun HomeScreen(umkmList: List<Umkm>) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 8.dp),
-            contentPadding = PaddingValues(vertical = 8.dp),
+                .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(umkmList) { umkm ->
-                UmkmItem(umkm)
+                // Panggil UmkmItem dengan fungsi klik
+                UmkmItem(umkm, onUmkmClick)
             }
         }
     }
@@ -49,56 +51,59 @@ fun HomeScreen(umkmList: List<Umkm>) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UmkmItem(umkm: Umkm) {
+// WAJIB: Tambahkan onUmkmClick untuk navigasi
+fun UmkmItem(umkm: Umkm, onUmkmClick: (String) -> Unit) {
     Card(
-        onClick = { /* TODO: Navigasi ke detail UMKM */ },
-        modifier = Modifier
-            .fillMaxWidth(),
+        // PENTING: Memicu navigasi menggunakan ID UMKM
+        onClick = { onUmkmClick(umkm.id) },
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium, // Bentuk sudut yang lembut (minimalis)
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow // Warna yang lebih menarik
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp) // Tambahkan sedikit elevasi
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp) // Minimalis
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-
+        Column {
+            // 1. Gambar (Fokus Utama, Tinggi, Crop)
             AsyncImage(
                 model = umkm.imageUrl,
                 contentDescription = umkm.name,
-                contentScale = ContentScale.Crop, // Crop gambar agar mengisi area
+                contentScale = ContentScale.Crop,
+                // Hapus `error = painterResource(id = R.drawable.ic_error)` agar tidak ada Unresolved Reference
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp)
+                    .height(200.dp) // Lebih tinggi
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            // 2. Konten Teks
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
 
-            // Nama UMKM (Lebih menonjol)
-            Text(
-                text = umkm.name,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+                // Nama UMKM (Paling Menonjol)
+                Text(
+                    text = umkm.name,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
 
-            Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
-            // Kategori (Warna aksen)
-            Text(
-                text = umkm.category,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary // Gunakan warna primary untuk aksen
-            )
+                // Kategori (Warna Aksen Ceria)
+                Text(
+                    text = umkm.category,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.secondary, // Warna Aksen
+                    fontWeight = FontWeight.SemiBold
+                )
 
-            Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            // Alamat
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Untuk UI minimalis, bisa ditambahkan ikon (tapi tidak wajib)
+                // Alamat (Subtle/Tersirat)
                 Text(
                     text = umkm.address,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis

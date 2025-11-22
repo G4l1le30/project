@@ -25,6 +25,7 @@ class UmkmRepository {
                     // Coba konversi data snapshot ke objek Umkm
                     val umkm = umkmSnapshot.getValue(Umkm::class.java)
                     if (umkm != null) {
+                        umkm.id = umkmSnapshot.key ?: ""
                         umkmList.add(umkm)
                     }
                 }
