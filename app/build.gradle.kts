@@ -1,10 +1,11 @@
-//App level gradle
+// FILE: app/build.gradle.kts (DI FOLDER app)
+// Path: .\Documents\GitHub\project\app\build.gradle.kts
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("com.google.gms.google-services")
-
 }
 
 android {
@@ -57,8 +58,9 @@ dependencies {
     // WAJIB: BOM harus di atas semua dependency firebase
     implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
 
-    // Firebase modules (boleh tanpa versi)
-    implementation("com.google.firebase:firebase-database")
+    // PERBAIKAN: Tambahkan versi eksplisit untuk DATABASE KTX
+    implementation("com.google.firebase:firebase-database-ktx:21.0.0")
+
     implementation("com.google.firebase:firebase-analytics")
     implementation("androidx.navigation:navigation-compose:2.7.7")
 

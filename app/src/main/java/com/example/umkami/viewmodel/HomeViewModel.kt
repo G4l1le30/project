@@ -1,5 +1,3 @@
-// viewmodel/HomeViewModel.kt
-
 package com.example.umkami.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -25,8 +23,23 @@ class HomeViewModel : ViewModel() {
     // Fungsi untuk memuat data dari repository secara asinkron
     private fun loadUmkmList() {
         viewModelScope.launch {
-            val list = repository.getUmkmFromFirebase()
-            _umkmList.value = list
+            try {
+                // Panggil repository
+                val list = repository.getUmkmFromFirebase()
+                // Update StateFlow dengan list yang diterima (bisa kosong atau terisi)
+                _umkmList.value = list
+
+                // --- Debugging Tambahan ---
+                if (list.isEmpty()) {
+                    println("DEBUG: Firebase returned an empty list. Check database connection or rules.")
+                }
+                // --------------------------
+
+            } catch (e: Exception) {
+                // Jika ada exception, pastikan list tetap kosong
+                println("ERROR fetching UMKM list: ${e.message}")
+                _umkmList.value = emptyList()
+            }
         }
     }
 }

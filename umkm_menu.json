@@ -1,0 +1,42 @@
+{
+  "umkm_menu": {
+    "umkm0": {
+      "menu_items": [
+        { "item_id": "m001", "name": "Bakso Urat", "price": 17000, "description": "Bakso urat sapi", "is_recommended": true },
+        { "item_id": "m002", "name": "Bakso Biasa", "price": 14000, "description": "Bakso daging sapi halus", "is_recommended": false },
+        { "item_id": "m003", "name": "Mie Ayam Bakso", "price": 20000, "description": "Mie ayam dengan 2 bakso halus", "is_recommended": true }
+      ]
+    },
+    "umkm1": {
+      "menu_items": [
+        { "item_id": "k001", "name": "Kopi Susu Lokal", "price": 15000, "description": "Signature Kopi Sore", "is_recommended": true },
+        { "item_id": "k002", "name": "Americano", "price": 12000, "description": "Kopi hitam panas/dingin", "is_recommended": false },
+        { "item_id": "k003", "name": "Red Velvet Latte", "price": 18000, "description": "Minuman manis creamy", "is_recommended": false }
+      ]
+    },
+    "umkm2": {
+      "menu_items": [
+        { "item_id": "r001", "name": "Roti Bakar Keju Spesial", "price": 18000, "description": "Keju melimpah", "is_recommended": true },
+        { "item_id": "r002", "name": "Roti Bakar Coklat", "price": 15000, "description": "Coklat meses klasik", "is_recommended": false }
+      ]
+    },
+    "umkm4": {
+      "menu_items": [
+        { "item_id": "a001", "name": "Ayam Geprek Level 2", "price": 19000, "description": "Pedas sedang", "is_recommended": true },
+        { "item_id": "a002", "name": "Ayam Geprek Original", "price": 16000, "description": "Sambal matah", "is_recommended": false }
+      ]
+    },
+    "umkm6": {
+      "menu_items": [
+        { "item_id": "s001", "name": "Sate Ayam 10 Tusuk", "price": 25000, "description": "Bumbu kacang khas Madura", "is_recommended": true },
+        { "item_id": "s002", "name": "Sate Kambing", "price": 35000, "description": "Sate kambing muda", "is_recommended": false }
+      ]
+    },
+    "umkm8": {
+      "menu_items": [
+        { "item_id": "t001", "name": "Es Teh Jumbo Original", "price": 5000, "description": "Teh manis biasa", "is_recommended": true },
+        { "item_id": "t002", "name": "Es Teh Lemon Jumbo", "price": 8000, "description": "Teh dengan perasan lemon", "is_recommended": false }
+      ]
+    }
+  }
+}

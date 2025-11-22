@@ -1,0 +1,21 @@
+{
+  "umkm_services": {
+    "umkm3": {
+      "service_packages": [
+        { "service_id": "L001", "name": "Paket Kilat 4 Jam", "price": 15000, "unit": "per kg", "description": "Selesai di hari yang sama" },
+        { "service_id": "L002", "name": "Paket Reguler", "price": 8000, "unit": "per kg", "description": "Selesai 1-2 hari" }
+      ],
+      "contact_phone": "0811-555-1234",
+      "operational_hours": "08:00 - 20:00"
+    },
+    "umkm7": {
+      "service_packages": [
+        { "service_id": "F001", "name": "Fotocopy B/W", "price": 250, "unit": "per lembar", "description": "Hitam putih standard" },
+        { "service_id": "F002", "name": "Print Warna", "price": 1000, "unit": "per lembar", "description": "Print full color" },
+        { "service_id": "F003", "name": "Jilid Spiral", "price": 8000, "unit": "per buku", "description": "Jilid plastik/kawat" }
+      ],
+      "contact_phone": "0857-999-5678",
+      "operational_hours": "07:00 - 22:00"
+    }
+  }
+}

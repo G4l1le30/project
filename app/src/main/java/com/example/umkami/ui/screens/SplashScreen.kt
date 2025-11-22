@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -19,46 +18,44 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.umkami.R // Pastikan import R benar
+import com.example.umkami.R
 import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(navController: NavController) {
-    // LaunchedEffect akan berjalan sekali saat composable ini pertama kali masuk ke komposisi
+    // Durasi tampil Splash Screen (misal: 1.5 detik)
+    val SPLASH_DURATION = 1500L
+
     LaunchedEffect(key1 = true) {
-        // Delay selama 2 detik (sesuaikan durasi sesuai keinginan Anda)
-        delay(2000L)
-        // Setelah delay, navigasi ke layar 'home' dan hapus SplashScreen dari back stack
+        delay(SPLASH_DURATION)
+        // Navigasi ke layar 'home' dan hapus SplashScreen dari stack
         navController.navigate("home") {
-            popUpTo("splash") { inclusive = true } // Hapus splash dari stack
+            popUpTo("splash") { inclusive = true }
         }
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.primaryContainer), // Gunakan warna tema Anda
+            // Menggunakan warna Surface
+            .background(MaterialTheme.colorScheme.surface),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         // Tampilkan logo UMKami Anda
         Image(
-            painter = painterResource(id = R.mipmap.ic_umkami_logo), // Anda akan menambahkan ini
+            // PERBAIKAN KRITIS: Merujuk ke foreground layer
+            painter = painterResource(id = R.mipmap.ic_umkami_logo_foreground),
             contentDescription = "UMKami Logo",
-            modifier = Modifier.size(200.dp) // Ukuran logo
+            modifier = Modifier.size(250.dp) // Ukuran logo lebih besar
         )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "UMKami",
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onPrimaryContainer
-        )
+        Spacer(modifier = Modifier.height(24.dp))
+
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "Temukan UMKM Favoritmu!",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+            style = MaterialTheme.typography.titleMedium, // Ukuran font sedang
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

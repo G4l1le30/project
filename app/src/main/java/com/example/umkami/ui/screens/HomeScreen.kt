@@ -13,9 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-// Import R dihilangkan karena tidak ada error/placeholder yang digunakan
-// import com.example.umkami.R
-// import androidx.compose.ui.res.painterResource // Dihilangkan jika tidak digunakan
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,19 +54,18 @@ fun UmkmItem(umkm: Umkm, onUmkmClick: (String) -> Unit) {
         // PENTING: Memicu navigasi menggunakan ID UMKM
         onClick = { onUmkmClick(umkm.id) },
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium, // Bentuk sudut yang lembut (minimalis)
+        shape = MaterialTheme.shapes.medium, // Bentuk sudut yang lembut
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp) // Minimalis
     ) {
         Column {
-            // 1. Gambar (Fokus Utama, Tinggi, Crop)
+            // 1. Gambar
             AsyncImage(
                 model = umkm.imageUrl,
                 contentDescription = umkm.name,
                 contentScale = ContentScale.Crop,
-                // Hapus `error = painterResource(id = R.drawable.ic_error)` agar tidak ada Unresolved Reference
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp) // Lebih tinggi
@@ -78,7 +74,7 @@ fun UmkmItem(umkm: Umkm, onUmkmClick: (String) -> Unit) {
             // 2. Konten Teks
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
 
-                // Nama UMKM (Paling Menonjol)
+                // Nama UMKM
                 Text(
                     text = umkm.name,
                     style = MaterialTheme.typography.titleLarge,
@@ -90,7 +86,7 @@ fun UmkmItem(umkm: Umkm, onUmkmClick: (String) -> Unit) {
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Kategori (Warna Aksen Ceria)
+                // Kategori
                 Text(
                     text = umkm.category,
                     style = MaterialTheme.typography.labelLarge,
@@ -100,7 +96,7 @@ fun UmkmItem(umkm: Umkm, onUmkmClick: (String) -> Unit) {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Alamat (Subtle/Tersirat)
+                // Alamat
                 Text(
                     text = umkm.address,
                     style = MaterialTheme.typography.bodyMedium,

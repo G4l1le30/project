@@ -1,83 +1,121 @@
 package com.example.umkami.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
-import com.example.umkami.data.model.Umkm
-import androidx.compose.ui.text.font.FontWeight
+import coil.compose.rememberAsyncImagePainter
+import com.example.umkami.viewmodel.DetailViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailScreen(umkmId: String?, navController: NavController) {
-    // Implementasi sederhana untuk tujuan UI (membutuhkan logika pencarian data nyata)
-    // Asumsi: Kita membuat objek UMKM sementara (mock) untuk demonstrasi
-    val umkmDetail = Umkm(
-        id = umkmId ?: "error",
-        name = "Bakso Mantap (ID: $umkmId)",
-        description = "Bakso enak, gurih, dan kenyal. Dibuat dengan daging sapi pilihan. Cocok untuk semua kalangan.",
-        category = "Makanan",
-        address = "Jl. Veteran, Malang",
-        imageUrl = "https://raw.githubusercontent.com/G4l1le30/project/master/assets/images/umkm0/Bakso_mi_bihun.jpg"
+fun DetailScreen(
+    umkmId: String?,
+    navController: NavController
+) {
+    val vm: DetailViewModel = viewModel(
+        factory = DetailViewModel.Factory(umkmId ?: "") // Menggunakan Factory
     )
+    val state = vm.uiState.collectAsState().value // Mengumpulkan DetailUiState
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(umkmDetail.name) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
+    if (state.isLoading) {
+        LoadingView()
+        return
+    }
+
+    val umkm = state.umkm ?: return // Jika data umkm null, jangan tampilkan konten
+
+    DetailContent(
+        name = umkm.name,
+        imageUrl = umkm.imageUrl,
+        description = umkm.description,
+        category = umkm.category,
+        menuItems = state.menuItems.map { it.name }, // Map ke nama menu
+        serviceItems = state.serviceItems.map { it.service }, // Map ke nama jasa
+        onBack = { navController.popBackStack() }
+    )
+}
+
+@Composable
+fun LoadingView() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+fun DetailContent(
+    name: String,
+    imageUrl: String,
+    description: String,
+    category: String,
+    menuItems: List<String>,
+    serviceItems: List<String>,
+    onBack: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState())
+    ) {
+
+        Button(onClick = onBack) {
+            Text("Back")
         }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
-        ) {
-            // Gambar Besar (Sesuai UI Kit)
-            AsyncImage(
-                model = umkmDetail.imageUrl,
-                contentDescription = umkmDetail.name,
-                contentScale = ContentScale.Crop,
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (imageUrl.isNotBlank()) {
+            Image(
+                painter = rememberAsyncImagePainter(imageUrl),
+                contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(250.dp)
-                    .padding(bottom = 16.dp)
+                    .height(220.dp)
             )
+        }
 
-            // Deskripsi UMKM
-            Text(
-                text = "Description:",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            Text(
-                text = umkmDetail.description,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
+        Spacer(modifier = Modifier.height(16.dp))
 
-            // Kategori dan Alamat
-            Text(text = "Category: ${umkmDetail.category}", style = MaterialTheme.typography.bodyMedium)
-            Text(text = "Address: ${umkmDetail.address}", style = MaterialTheme.typography.bodyMedium)
+        Text(text = name, style = MaterialTheme.typography.headlineSmall)
+        Spacer(modifier = Modifier.height(8.dp))
 
-            // TODO: Tambahkan tombol "Lihat di Peta" di sini untuk meniru Map View di UI Kit
+        Text(text = "Kategori: $category", style = MaterialTheme.typography.bodyMedium)
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(text = description, style = MaterialTheme.typography.bodyMedium)
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Tampilkan Menu jika ada
+        if (menuItems.isNotEmpty()) {
+            Text("Menu:", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            menuItems.forEach {
+                Text(text = "- $it")
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // Tampilkan Services jika ada
+        if (serviceItems.isNotEmpty()) {
+            Text("Services:", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            serviceItems.forEach {
+                Text(text = "- $it")
+            }
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
