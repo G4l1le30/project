@@ -1,3 +1,5 @@
+// viewmodel/HomeViewModel.kt
+
 package com.example.umkami.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -9,15 +11,22 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class HomeViewModel : ViewModel() {
+    private val repository = UmkmRepository()
 
-    private val repo = UmkmRepository()
-
+    // StateFlow untuk menampung list UMKM. Diinisialisasi dengan list kosong.
     private val _umkmList = MutableStateFlow<List<Umkm>>(emptyList())
-    val umkmList: StateFlow<List<Umkm>> get() = _umkmList
+    val umkmList: StateFlow<List<Umkm>> = _umkmList
 
     init {
+        // Memuat data segera setelah ViewModel dibuat
+        loadUmkmList()
+    }
+
+    // Fungsi untuk memuat data dari repository secara asinkron
+    private fun loadUmkmList() {
         viewModelScope.launch {
-            _umkmList.value = repo.getUmkmFromFirebase()
+            val list = repository.getUmkmFromFirebase()
+            _umkmList.value = list
         }
     }
 }

@@ -1,0 +1,104 @@
+{
+  "umkm": {
+    "umkm0": {
+      "id": "umkm0",
+      "name": "Warung Bakso Mantep",
+      "category": "Makanan",
+      "description": "Bakso enak dekat kampus UB, terkenal dengan kuah gurih dan bakso uratnya.",
+      "address": "Jl. Veteran, Lowokwaru, Malang",
+      "lat": -7.956,
+      "lng": 112.615,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/2/28/Bakso_mi_bihun.jpg"
+    },
+    "umkm1": {
+      "id": "umkm1",
+      "name": "Kedai Kopi Sore",
+      "category": "Minuman",
+      "description": "Kedai kopi lokal dengan suasana tenang, cocok untuk nugas dan nongkrong.",
+      "address": "Jl. Sigura-gura, Malang",
+      "lat": -7.957,
+      "lng": 112.612,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/4/45/A_small_cup_of_coffee.JPG"
+    },
+    "umkm2": {
+      "id": "umkm2",
+      "name": "Roti Bakar 88",
+      "category": "Makanan",
+      "description": "Roti bakar legendaris dengan topping melimpah dan harga terjangkau.",
+      "address": "Jl. Soekarno-Hatta, Malang",
+      "lat": -7.951,
+      "lng": 112.626,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/6a/Toast-3.jpg"
+    },
+    "umkm3": {
+      "id": "umkm3",
+      "name": "Laundry Kilat Express",
+      "category": "Jasa",
+      "description": "Layanan laundry cepat 4 jam selesai dengan harga mahasiswa.",
+      "address": "Jl. MT Haryono, Malang",
+      "lat": -7.952,
+      "lng": 112.621,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8c/Laundry_interior.jpg"
+    },
+    "umkm4": {
+      "id": "umkm4",
+      "name": "Ayam Geprek Pak D",
+      "category": "Makanan",
+      "description": "Ayam geprek dengan level sambal bervariasi, favorit mahasiswa UB.",
+      "address": "Jl. Kerto Leksono, Malang",
+      "lat": -7.958,
+      "lng": 112.618,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/0f/Ayam_penyet_Jakarta.JPG"
+    },
+    "umkm5": {
+      "id": "umkm5",
+      "name": "Toko Kaos Arema",
+      "category": "Fashion",
+      "description": "Menjual kaos Arema dan merchandise lokal lainnya.",
+      "address": "Jl. Bandung, Malang",
+      "lat": -7.961,
+      "lng": 112.629,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5a/Tshirt_mockup.png"
+    },
+    "umkm6": {
+      "id": "umkm6",
+      "name": "Sate Ayu",
+      "category": "Makanan",
+      "description": "Sate ayam bumbu khas Madura dengan harga mahasiswa.",
+      "address": "Jl. Jakarta, Malang",
+      "lat": -7.964,
+      "lng": 112.633,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/3/33/Satay_chicken.jpg"
+    },
+    "umkm7": {
+      "id": "umkm7",
+      "name": "Foto Copy Murah Jaya",
+      "category": "Jasa",
+      "description": "Fotocopy dan print murah, dekat kampus dan buka sampai malam.",
+      "address": "Jl. Mayjen Panjaitan, Malang",
+      "lat": -7.953,
+      "lng": 112.620,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/89/Photocopy_shop.jpg"
+    },
+    "umkm8": {
+      "id": "umkm8",
+      "name": "Es Teh Jumbo 5K",
+      "category": "Minuman",
+      "description": "Es teh jumbo berbagai rasa, harga ramah kantong mahasiswa.",
+      "address": "Jl. Kalpataru, Malang",
+      "lat": -7.949,
+      "lng": 112.619,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/1/1b/Teh_bunga_telaga.jpg"
+    },
+    "umkm9": {
+      "id": "umkm9",
+      "name": "Kerajinan Kayu Pak Eko",
+      "category": "Kerajinan",
+      "description": "Produk kerajinan tangan dari kayu, ramah lingkungan dan unik.",
+      "address": "Jl. Tlogomas, Malang",
+      "lat": -7.932,
+      "lng": 112.594,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/67/Wooden_bowl.jpg"
+    }
+  }
+}

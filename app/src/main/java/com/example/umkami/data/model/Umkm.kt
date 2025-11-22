@@ -1,4 +1,13 @@
 package com.example.umkami.data.model
 
-class Umkm {
-}
+// Data class ini harus sesuai dengan struktur field di Firestore collection "umkm"
+
+data class Umkm(
+    // Penting: Firebase membutuhkan konstruktor tanpa argumen
+    var id: String = "",
+    var name: String = "",
+    var description: String = "",
+    var category: String = "", // misal: makanan, jasa, minuman
+    var address: String = "",
+    var imageUrl: String = "" // Untuk dimuat oleh Coil di HomeScreen.kt
+)
