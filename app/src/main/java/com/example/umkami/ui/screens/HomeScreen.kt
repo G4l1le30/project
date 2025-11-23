@@ -55,8 +55,11 @@ fun HomeScreen(
 
     // Load recommendations when currentUser changes
     LaunchedEffect(currentUser) {
-        currentUser?.uid?.let { uid ->
-            homeVm.loadRecommendedUmkm(uid)
+        val user = currentUser
+        if (user != null) {
+            homeVm.loadRecommendedUmkm(user.uid)
+        } else {
+            homeVm.loadRecommendedUmkm("") // Load generic recommendations if no user is logged in
         }
     }
 

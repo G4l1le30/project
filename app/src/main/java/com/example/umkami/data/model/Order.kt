@@ -1,10 +1,10 @@
 package com.example.umkami.data.model
 
 data class Order(
-    val userId: String = "", // New field to link order to user
-    val umkmId: String,
-    val items: List<CartItem>,
-    val totalPrice: Double,
+    val userId: String = "",
+    val umkmId: String = "",
+    val items: List<CartItem> = emptyList(),
+    val totalPrice: Double = 0.0,
     val orderTimestamp: Long = System.currentTimeMillis(),
     val customerName: String = "Anonymous Customer"
 )

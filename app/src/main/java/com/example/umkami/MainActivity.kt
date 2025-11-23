@@ -69,7 +69,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable("orderHistory") {
-                        OrderHistoryScreen(navController = navController)
+                        OrderHistoryScreen(navController = navController, authViewModel = authVm)
                     }
 
                     composable("address") {

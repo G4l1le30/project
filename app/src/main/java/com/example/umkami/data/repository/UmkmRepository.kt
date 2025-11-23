@@ -175,6 +175,25 @@ class UmkmRepository {
 
 
     // ============================================================
+    // 8. Get Orders by User ID
+    // ============================================================
+    suspend fun getOrdersByUserId(userId: String): List<Order> = suspendCancellableCoroutine { continuation ->
+        dbOrders.orderByChild("userId").equalTo(userId).addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val orderList = snapshot.children.mapNotNull { it.getValue(Order::class.java) }
+                // Sort by most recent first
+                if (continuation.isActive) continuation.resume(orderList.sortedByDescending { it.orderTimestamp })
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("UmkmRepository", "Error getting orders by user ID: ${error.message}")
+                if (continuation.isActive) continuation.resume(emptyList())
+            }
+        })
+    }
+
+
+    // ============================================================
     // ALTERNATIF: Callback (Kalau Compose kamu butuh callback)
     // ============================================================
     fun getReviewsByUmkmIdCallback(umkmId: String, onResult: (List<Review>) -> Unit) {

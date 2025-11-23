@@ -61,13 +61,19 @@ fun DetailScreen(
     val currentUser by authViewModel.currentUser.collectAsState() // Collect current user
 
     // Load data and record view when the screen is first composed
-    LaunchedEffect(umkmId, currentUser) {
+    LaunchedEffect(umkmId) {
         if (umkmId != null) {
             detailViewModel.loadUmkmDetails(umkmId)
-            // Record category view for recommendations
-            if (umkm != null && currentUser != null) {
-                homeViewModel.recordCategoryView(currentUser!!.uid, umkm.category)
-            }
+        }
+    }
+
+    LaunchedEffect(umkm, currentUser) {
+        val user = currentUser
+        if (umkm != null && user != null) {
+            homeViewModel.recordCategoryView(user.uid, umkm.category)
+            homeViewModel.loadRecommendedUmkm(user.uid) // Trigger loading recommendations after recording view
+        } else {
+            homeViewModel.loadRecommendedUmkm("") // Load generic recommendations if no user
         }
     }
 
