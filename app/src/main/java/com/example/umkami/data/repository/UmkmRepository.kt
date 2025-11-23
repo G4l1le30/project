@@ -3,6 +3,8 @@ package com.example.umkami.data.repository
 import android.util.Log
 import com.example.umkami.data.model.Umkm
 import com.example.umkami.data.model.MenuItem
+import com.example.umkami.data.model.Order
+import com.example.umkami.data.model.Review
 import com.example.umkami.data.model.ServiceItem
 import com.google.firebase.database.*
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -18,6 +20,7 @@ class UmkmRepository {
     private val dbMenu = dbRoot.child("umkm_menu")
     private val dbService = dbRoot.child("umkm_services")
     private val dbReviews = dbRoot.child("reviews")
+    private val dbOrders = dbRoot.child("orders") // New reference for orders
 
     // ============================================================
     // 1. Ambil semua UMKM
@@ -75,7 +78,11 @@ class UmkmRepository {
     suspend fun getUmkmMenu(umkmId: String): List<MenuItem> = suspendCancellableCoroutine { continuation ->
         dbMenu.child(umkmId).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val menuList = snapshot.children.mapNotNull { it.getValue(MenuItem::class.java) }
+                val menuList = snapshot.children.mapNotNull { dataSnapshot ->
+                    dataSnapshot.getValue(MenuItem::class.java)?.apply {
+                        this.umkmId = umkmId // Inject the umkmId into each menu item
+                    }
+                }
                 if (continuation.isActive) continuation.resume(menuList)
             }
 
@@ -104,12 +111,28 @@ class UmkmRepository {
     // ============================================================
     // 5. Ambil Reviews UMKM (Coroutine)
     // ============================================================
-    suspend fun getReviewsByUmkmId(umkmId: String): List<String> = suspendCancellableCoroutine { continuation ->
+    suspend fun getReviewsByUmkmId(umkmId: String): List<Review> = suspendCancellableCoroutine { continuation ->
         dbReviews.child(umkmId).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                val reviewList = mutableListOf<Review>()
+                snapshot.children.forEach { child ->
+                    // Coba mapping ke objek Review dulu
+                    val review = try {
+                        child.getValue(Review::class.java)
+                    } catch (e: Exception) {
+                        null
+                    }
 
-                val reviewList = snapshot.children.mapNotNull {
-                    it.getValue(String::class.java)
+                    if (review != null) {
+                        reviewList.add(review)
+                    } else {
+                        // Jika gagal, coba mapping sebagai String (untuk data lama)
+                        val oldReview = child.getValue(String::class.java)
+                        if (oldReview != null) {
+                            // Konversi data lama ke format baru
+                            reviewList.add(Review(author = "Anonymous", comment = oldReview, rating = 3.0f))
+                        }
+                    }
                 }
 
                 if (continuation.isActive) continuation.resume(reviewList)
@@ -123,13 +146,56 @@ class UmkmRepository {
     }
 
     // ============================================================
+    // 6. Tambah Review Baru
+    // ============================================================
+    suspend fun addReview(umkmId: String, review: Review): Boolean = suspendCancellableCoroutine { continuation ->
+        dbReviews.child(umkmId).push().setValue(review)
+            .addOnSuccessListener {
+                if (continuation.isActive) continuation.resume(true)
+            }
+            .addOnFailureListener {
+                if (continuation.isActive) continuation.resume(false)
+            }
+    }
+
+
+    // ============================================================
+    // 7. Tambah Order Baru
+    // ============================================================
+    suspend fun placeOrder(order: Order): Boolean = suspendCancellableCoroutine { continuation ->
+        dbOrders.push().setValue(order)
+            .addOnSuccessListener {
+                if (continuation.isActive) continuation.resume(true)
+            }
+            .addOnFailureListener {
+                Log.e("UmkmRepository", "Failed to place order: ${it.message}")
+                if (continuation.isActive) continuation.resume(false)
+            }
+    }
+
+
+    // ============================================================
     // ALTERNATIF: Callback (Kalau Compose kamu butuh callback)
     // ============================================================
-    fun getReviewsByUmkmIdCallback(umkmId: String, onResult: (List<String>) -> Unit) {
+    fun getReviewsByUmkmIdCallback(umkmId: String, onResult: (List<Review>) -> Unit) {
         dbReviews.child(umkmId).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val reviewList = snapshot.children.mapNotNull {
-                    it.getValue(String::class.java)
+                val reviewList = mutableListOf<Review>()
+                snapshot.children.forEach { child ->
+                    val review = try {
+                        child.getValue(Review::class.java)
+                    } catch (e: Exception) {
+                        null
+                    }
+
+                    if (review != null) {
+                        reviewList.add(review)
+                    } else {
+                        val oldReview = child.getValue(String::class.java)
+                        if (oldReview != null) {
+                            reviewList.add(Review(author = "Anonymous", comment = oldReview, rating = 3.0f))
+                        }
+                    }
                 }
                 onResult(reviewList)
             }

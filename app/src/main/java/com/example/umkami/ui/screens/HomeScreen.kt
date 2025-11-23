@@ -3,17 +3,25 @@ package com.example.umkami.ui.screens
 import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.umkami.data.model.Umkm
+import com.example.umkami.viewmodel.CartViewModel
+import com.example.umkami.viewmodel.HomeViewModel
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
@@ -21,16 +29,41 @@ import com.google.maps.android.compose.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    umkmList: List<Umkm>,
-    onUmkmClick: (String) -> Unit
+    onUmkmClick: (String) -> Unit,
+    onCartClick: () -> Unit,
+    homeVm: HomeViewModel = viewModel(), // Inject HomeViewModel
+    cartVm: CartViewModel = viewModel() // Inject CartViewModel
 ) {
     // Mode tampilan: List atau Map
     var isMapMode by remember { mutableStateOf(false) }
+
+    // Collect states from ViewModel
+    val filteredUmkmList by homeVm.filteredUmkmList.collectAsState()
+    val searchQuery by homeVm.searchQuery.collectAsState()
+    val selectedCategory by homeVm.selectedCategory.collectAsState()
+    val allCategories by homeVm.categories.collectAsState()
+    val cartItemCount by cartVm.cartItems.collectAsState()
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(if (isMapMode) "UMKami Map View" else "UMKami Listings") },
+                actions = {
+                    BadgedBox(
+                        badge = {
+                            if (cartItemCount.isNotEmpty()) {
+                                Badge { Text(cartItemCount.size.toString()) }
+                            }
+                        }
+                    ) {
+                        IconButton(onClick = onCartClick) {
+                            Icon(
+                                imageVector = Icons.Default.ShoppingCart,
+                                contentDescription = "Shopping Cart"
+                            )
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
@@ -48,7 +81,8 @@ fun HomeScreen(
 
         if (isMapMode) {
             // ------------ MAP MODE ------------
-            val malang = LatLng(-7.96, 112.63)
+            // Use filteredUmkmList for markers in map mode
+            val malang = LatLng(-7.96, 112.63) // Default center
 
             val cameraPositionState = rememberCameraPositionState {
                 position = CameraPosition.fromLatLngZoom(malang, 12f)
@@ -60,7 +94,7 @@ fun HomeScreen(
                     .padding(paddingValues),
                 cameraPositionState = cameraPositionState
             ) {
-                umkmList.forEach { umkm ->
+                filteredUmkmList.forEach { umkm ->
                     Marker(
                         state = MarkerState(position = LatLng(umkm.lat, umkm.lng)),
                         title = umkm.name,
@@ -74,17 +108,81 @@ fun HomeScreen(
                 }
             }
         } else {
-            // ------------ LIST MODE ------------
-            LazyColumn(
+            // ------------ LIST MODE WITH FILTERS ------------
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(horizontal = 16.dp),
-                contentPadding = PaddingValues(vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(umkmList) { umkm ->
-                    UmkmItem(umkm, onUmkmClick)
+                // Search Bar
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { homeVm.setSearchQuery(it) },
+                    label = { Text("Search UMKM") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    singleLine = true
+                )
+
+                // Category Filter Chips
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(bottom = 8.dp)
+                ) {
+                    items(allCategories) { category ->
+                        FilterChip(
+                            selected = selectedCategory == category,
+                            onClick = { homeVm.setSelectedCategory(category) },
+                            label = { Text(category) }
+                        )
+                    }
+                }
+
+                // UMKM List (filtered)
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f) // Fill remaining space
+                        .padding(horizontal = 16.dp),
+                    contentPadding = PaddingValues(vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    if (filteredUmkmList.isEmpty() && searchQuery.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = "No UMKM found for \"$searchQuery\"",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    } else if (filteredUmkmList.isEmpty() && selectedCategory != "All") {
+                        item {
+                            Text(
+                                text = "No UMKM found in category \"$selectedCategory\"",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    } else if (filteredUmkmList.isEmpty()) {
+                         item {
+                            Text(
+                                text = "No UMKM available.",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    }
+                    items(filteredUmkmList) { umkm ->
+                        UmkmItem(umkm, onUmkmClick)
+                    }
                 }
             }
         }
@@ -109,7 +207,8 @@ fun UmkmItem(umkm: Umkm, onUmkmClick: (String) -> Unit) {
                 contentDescription = umkm.name,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
+                    .height(200.dp),
+                contentScale = ContentScale.Crop
             )
 
             Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {

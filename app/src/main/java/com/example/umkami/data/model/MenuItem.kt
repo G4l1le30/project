@@ -1,6 +1,7 @@
 package com.example.umkami.data.model
 
 data class MenuItem(
-    var name: String = "",
-    var price: Int = 0
+    val name: String = "",
+    val price: Int = 0,
+    var umkmId: String = "" // Changed from val to var
 )

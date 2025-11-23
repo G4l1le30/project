@@ -1,84 +1,101 @@
 package com.example.umkami.viewmodel
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.umkami.data.model.MenuItem
+import com.example.umkami.data.model.Review
 import com.example.umkami.data.model.ServiceItem
 import com.example.umkami.data.model.Umkm
 import com.example.umkami.data.repository.UmkmRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-// Tambahkan reviews ke UI State
+// UI State for the Detail Screen
 data class DetailUiState(
     val umkm: Umkm? = null,
-    val menuItems: List<MenuItem> = emptyList(),
-    val serviceItems: List<ServiceItem> = emptyList(),
-    val reviews: List<String> = emptyList(),   // BARU
-    val isLoading: Boolean = true
+    val menu: List<MenuItem> = emptyList(),
+    val services: List<ServiceItem> = emptyList(),
+    val reviews: List<Review> = emptyList(),
+    val isLoading: Boolean = true,
+    val error: String? = null,
+    val reviewSubmissionSuccess: Boolean = false
 )
 
-class DetailViewModel(private val umkmId: String) : ViewModel() {
+class DetailViewModel : ViewModel() {
 
     private val repository = UmkmRepository()
 
+    // Expose screen UI state
     private val _uiState = MutableStateFlow(DetailUiState())
-    val uiState: StateFlow<DetailUiState> = _uiState
+    val uiState: StateFlow<DetailUiState> = _uiState.asStateFlow()
 
-    init {
-        loadDetailData(umkmId)
+    // State for the review form
+    var reviewAuthor by mutableStateOf("")
+    var reviewComment by mutableStateOf("")
+    var reviewRating by mutableStateOf(0)
+
+
+    fun loadUmkmDetails(umkmId: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            try {
+                val umkmDetails = repository.getUmkmById(umkmId)
+                if (umkmDetails != null) {
+                    val menuItems = repository.getUmkmMenu(umkmId)
+                    val serviceItems = repository.getUmkmServices(umkmId)
+                    val reviews = repository.getReviewsByUmkmId(umkmId)
+
+                    _uiState.value = DetailUiState(
+                        umkm = umkmDetails,
+                        menu = menuItems,
+                        services = serviceItems,
+                        reviews = reviews,
+                        isLoading = false
+                    )
+                } else {
+                    _uiState.value = DetailUiState(error = "UMKM not found.", isLoading = false)
+                }
+            } catch (e: Exception) {
+                _uiState.value = DetailUiState(error = "Failed to load data: ${e.message}", isLoading = false)
+            }
+        }
     }
 
-    private fun loadDetailData(id: String) {
-        _uiState.value = _uiState.value.copy(isLoading = true)
+    fun submitReview(umkmId: String) {
+        if (reviewComment.isBlank() || reviewRating == 0) {
+            // Optional: Handle validation error in UI
+            return
+        }
+
+        val authorName = if (reviewAuthor.isBlank()) "Anonymous" else reviewAuthor
+
+        val newReview = Review(
+            author = authorName,
+            comment = reviewComment,
+            rating = reviewRating.toFloat()
+        )
 
         viewModelScope.launch {
-            try {
-                // 1. Ambil data UMKM
-                val umkm = repository.getUmkmById(id)
-
-                if (umkm == null) {
-                    _uiState.value = _uiState.value.copy(isLoading = false)
-                    return@launch
-                }
-
-                // 2. Ambil Menu dan Services
-                val menuList = when (umkm.category) {
-                    "Makanan", "Minuman" -> repository.getUmkmMenu(id)
-                    else -> emptyList()
-                }
-
-                val serviceList = when (umkm.category) {
-                    "Jasa", "Kerajinan", "Fashion" -> repository.getUmkmServices(id)
-                    else -> emptyList()
-                }
-
-                // 3. Ambil Reviews
-                val reviewsList = repository.getReviewsByUmkmId(id)
-
-                // 4. Update UI State
-                _uiState.value = _uiState.value.copy(
-                    umkm = umkm,
-                    menuItems = menuList,
-                    serviceItems = serviceList,
-                    reviews = reviewsList,    // MASUKKAN KE STATE
-                    isLoading = false
-                )
-
-            } catch (e: Exception) {
-                println("ERROR fetching UMKM detail for $id: ${e.message}")
-                _uiState.value = _uiState.value.copy(isLoading = false)
+            val success = repository.addReview(umkmId, newReview)
+            if (success) {
+                // Refresh reviews and clear the form
+                loadUmkmDetails(umkmId) // Reload all details to show the new review
+                reviewAuthor = ""
+                reviewComment = ""
+                reviewRating = 0
+                _uiState.value = _uiState.value.copy(reviewSubmissionSuccess = true)
+            } else {
+                // Optional: show an error message in the UI
             }
         }
     }
 
-    companion object {
-        fun Factory(umkmId: String) = object : androidx.lifecycle.ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return DetailViewModel(umkmId) as T
-            }
-        }
+    fun resetSubmissionStatus() {
+        _uiState.value = _uiState.value.copy(reviewSubmissionSuccess = false)
     }
 }

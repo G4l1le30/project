@@ -1,159 +1,343 @@
 package com.example.umkami.ui.screens
 
-import androidx.compose.foundation.Image
+import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import coil.compose.rememberAsyncImagePainter
+import coil.compose.AsyncImage
+import com.example.umkami.data.model.Review
+import com.example.umkami.viewmodel.CartViewModel
 import com.example.umkami.viewmodel.DetailViewModel
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberCameraPositionState
+import androidx.compose.material.icons.filled.ShoppingCart
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(
     umkmId: String?,
-    navController: NavController
+    navController: NavController,
+    onCartClick: () -> Unit,
+    detailViewModel: DetailViewModel = viewModel(),
+    cartViewModel: CartViewModel // Inject CartViewModel
 ) {
-    val vm: DetailViewModel = viewModel(
-        factory = DetailViewModel.Factory(umkmId ?: "")
-    )
+    val uiState by detailViewModel.uiState.collectAsState()
+    val umkm = uiState.umkm
+    val context = LocalContext.current
+    val cartItemCount by cartViewModel.cartItems.collectAsState()
 
-    val state = vm.uiState.collectAsState().value
-
-    if (state.isLoading) {
-        LoadingView()
-        return
+    // Load data when the screen is first composed
+    LaunchedEffect(umkmId) {
+        if (umkmId != null) {
+            detailViewModel.loadUmkmDetails(umkmId)
+        }
     }
 
-    val umkm = state.umkm ?: return
+    // Show a toast on successful submission
+    LaunchedEffect(uiState.reviewSubmissionSuccess) {
+        if (uiState.reviewSubmissionSuccess) {
+            Toast.makeText(context, "Review submitted successfully!", Toast.LENGTH_SHORT).show()
+            detailViewModel.resetSubmissionStatus()
+        }
+    }
 
-    DetailContent(
-        name = umkm.name,
-        imageUrl = umkm.imageUrl,
-        description = umkm.description,
-        category = umkm.category,
-        menuItems = state.menuItems.map { it.name },
-        serviceItems = state.serviceItems.map { it.service },
-        reviews = state.reviews,   // ⭐ Ambil review dinamiss dari Firebase
-        onBack = { navController.popBackStack() }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(umkm?.name ?: "Detail") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    BadgedBox(
+                        badge = {
+                            if (cartItemCount.isNotEmpty()) {
+                                Badge { Text(cartItemCount.size.toString()) }
+                            }
+                        }
+                    ) {
+                        IconButton(onClick = onCartClick) {
+                            Icon(
+                                imageVector = Icons.Default.ShoppingCart,
+                                contentDescription = "Shopping Cart"
+                            )
+                        }
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        when {
+            uiState.isLoading -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            }
+            uiState.error != null -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Error: ${uiState.error}")
+                }
+            }
+            umkm != null -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                ) {
+                    // Header Image
+                    item {
+                        AsyncImage(
+                            model = umkm.imageUrl,
+                            contentDescription = "Image of ${umkm.name}",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(250.dp)
+                                .clip(RoundedCornerShape(12.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+
+                    // Basic Info
+                    item {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(umkm.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                            Text(umkm.category, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.secondary)
+                            Text(umkm.description, style = MaterialTheme.typography.bodyLarge)
+                            Text(umkm.address, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+
+                    // Map View
+                    item {
+                        val location = LatLng(umkm.lat, umkm.lng)
+                        val cameraPositionState = rememberCameraPositionState {
+                            position = CameraPosition.fromLatLngZoom(location, 15f)
+                        }
+                        GoogleMap(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)
+                                .clip(RoundedCornerShape(12.dp)),
+                            cameraPositionState = cameraPositionState
+                        ) {
+                            Marker(state = MarkerState(position = location), title = umkm.name)
+                        }
+                    }
+
+                    // Menu or Services
+                    if (uiState.menu.isNotEmpty()) {
+                        item {
+                            SectionTitle("Menu")
+                        }
+                        items(uiState.menu) { menuItem ->
+                            ListItem(
+                                headlineContent = { Text(menuItem.name) },
+                                supportingContent = { Text("Rp ${"%,d".format(menuItem.price)}") },
+                                trailingContent = {
+                                    IconButton(onClick = { cartViewModel.addItem(menuItem) }) {
+                                        Icon(Icons.Default.Add, contentDescription = "Add to Cart")
+                                    }
+                                }
+                            )
+                        }
+                    } else if (uiState.services.isNotEmpty()) {
+                        item {
+                            SectionTitle("Services")
+                        }
+                        items(uiState.services) { serviceItem ->
+                            ListItem(
+                                headlineContent = { Text(serviceItem.service) },
+                                trailingContent = { Text("Rp ${"%,d".format(serviceItem.price)}") }
+                            )
+                        }
+                    }
+
+                    // Reviews Section
+                    item {
+                        SectionTitle("Reviews")
+                    }
+                    if (uiState.reviews.isEmpty()) {
+                        item { Text("No reviews yet. Be the first to review!", textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) }
+                    } else {
+                        items(uiState.reviews) { review ->
+                            ReviewItem(review)
+                        }
+                    }
+
+
+                    // Add Review Form
+                    item {
+                        AddReviewForm(
+                            author = detailViewModel.reviewAuthor,
+                            onAuthorChange = { detailViewModel.reviewAuthor = it },
+                            comment = detailViewModel.reviewComment,
+                            onCommentChange = { detailViewModel.reviewComment = it },
+                            rating = detailViewModel.reviewRating,
+                            onRatingChange = { detailViewModel.reviewRating = it },
+                            onSubmit = {
+                                if (umkmId != null) {
+                                    detailViewModel.submitReview(umkmId)
+                                }
+                            }
+                        )
+                    }
+
+                    // Spacer at the bottom
+                    item {
+                        Spacer(modifier = Modifier.height(30.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SectionTitle(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
     )
 }
 
 @Composable
-fun LoadingView() {
-    Box(
+fun ReviewItem(review: Review) {
+    Card(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        contentAlignment = Alignment.Center
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        CircularProgressIndicator()
+        Column(Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(review.author, fontWeight = FontWeight.Bold)
+                StarRatingDisplay(rating = review.rating.toInt())
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(review.comment)
+        }
     }
 }
 
 @Composable
-fun DetailContent(
-    name: String,
-    imageUrl: String,
-    description: String,
-    category: String,
-    menuItems: List<String>,
-    serviceItems: List<String>,
-    reviews: List<String>,   // ⭐ Reviews dikirim dari DetailScreen
-    onBack: () -> Unit
+fun AddReviewForm(
+    author: String,
+    onAuthorChange: (String) -> Unit,
+    comment: String,
+    onCommentChange: (String) -> Unit,
+    rating: Int,
+    onRatingChange: (Int) -> Unit,
+    onSubmit: () -> Unit
 ) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        SectionTitle("Leave a Review")
 
-        Button(onClick = onBack) {
-            Text("Back")
+        OutlinedTextField(
+            value = author,
+            onValueChange = onAuthorChange,
+            label = { Text("Your Name (Optional)") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = comment,
+            onValueChange = onCommentChange,
+            label = { Text("Your Review") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(120.dp)
+        )
+
+        StarRatingInput(rating = rating, onRatingChange = onRatingChange)
+
+        Button(
+            onClick = onSubmit,
+            modifier = Modifier.align(Alignment.End),
+            enabled = comment.isNotBlank() && rating > 0
+        ) {
+            Text("Submit")
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (imageUrl.isNotBlank()) {
-            Image(
-                painter = rememberAsyncImagePainter(imageUrl),
-                contentDescription = null,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(220.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(text = name, style = MaterialTheme.typography.headlineSmall)
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(text = "Kategori: $category", style = MaterialTheme.typography.bodyMedium)
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Text(text = description, style = MaterialTheme.typography.bodyMedium)
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // MENU
-        if (menuItems.isNotEmpty()) {
-            Text("Menu:", style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(8.dp))
-            menuItems.forEach { Text(text = "- $it") }
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        // SERVICES
-        if (serviceItems.isNotEmpty()) {
-            Text("Services:", style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(8.dp))
-            serviceItems.forEach { Text(text = "- $it") }
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // ⭐ REVIEW DYNAMIC SECTION
-        ReviewSection(reviews)
     }
 }
 
 @Composable
-fun ReviewSection(reviews: List<String>) {
-    Column(Modifier.fillMaxWidth()) {
-        Text(
-            text = "Ulasan Pengunjung",
-            style = MaterialTheme.typography.titleMedium
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        if (reviews.isEmpty()) {
-            Text("Belum ada ulasan.", style = MaterialTheme.typography.bodyMedium)
-            return
-        }
-
-        reviews.forEach { review ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Text(
-                    text = review,
-                    modifier = Modifier.padding(12.dp),
-                    style = MaterialTheme.typography.bodyMedium
+fun StarRatingInput(
+    rating: Int,
+    onRatingChange: (Int) -> Unit,
+    maxRating: Int = 5
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text("Your Rating: ", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+        for (i in 1..maxRating) {
+            IconButton(onClick = { onRatingChange(i) }) {
+                Icon(
+                    imageVector = if (i <= rating) Icons.Default.Star else Icons.Default.StarBorder,
+                    contentDescription = "Star $i",
+                    tint = if (i <= rating) Color(0xFFFFD700) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(32.dp)
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun StarRatingDisplay(rating: Int, maxRating: Int = 5) {
+    Row {
+        for (i in 1..maxRating) {
+            Icon(
+                imageVector = if (i <= rating) Icons.Default.Star else Icons.Default.StarBorder,
+                contentDescription = null,
+                tint = if (i <= rating) Color(0xFFFFD700) else Color.Gray,
+                modifier = Modifier.size(16.dp)
+            )
         }
     }
 }
