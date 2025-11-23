@@ -10,5 +10,6 @@ data class Umkm(
     var address: String = "",
     var imageUrl: String = "", // Untuk dimuat oleh Coil di HomeScreen.kt
     var lat: Double = 0.0, // Atau String/Float, tergantung tipe data di JSON Anda
-    var lng: Double = 0.0
+    var lng: Double = 0.0,
+    var contact: String = "" // New field for contact number
 )

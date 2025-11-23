@@ -1,5 +1,7 @@
 package com.example.umkami.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -9,8 +11,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,15 +32,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.umkami.data.model.Review
+import com.example.umkami.viewmodel.AuthViewModel // Import AuthViewModel
 import com.example.umkami.viewmodel.CartViewModel
 import com.example.umkami.viewmodel.DetailViewModel
+import com.example.umkami.viewmodel.HomeViewModel // Import HomeViewModel
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
-import androidx.compose.material.icons.filled.ShoppingCart
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,25 +50,24 @@ fun DetailScreen(
     navController: NavController,
     onCartClick: () -> Unit,
     detailViewModel: DetailViewModel = viewModel(),
-    cartViewModel: CartViewModel // Inject CartViewModel
+    cartViewModel: CartViewModel, // Inject CartViewModel
+    authViewModel: AuthViewModel, // Inject AuthViewModel
+    homeViewModel: HomeViewModel // Inject HomeViewModel
 ) {
     val uiState by detailViewModel.uiState.collectAsState()
     val umkm = uiState.umkm
     val context = LocalContext.current
     val cartItemCount by cartViewModel.cartItems.collectAsState()
+    val currentUser by authViewModel.currentUser.collectAsState() // Collect current user
 
-    // Load data when the screen is first composed
-    LaunchedEffect(umkmId) {
+    // Load data and record view when the screen is first composed
+    LaunchedEffect(umkmId, currentUser) {
         if (umkmId != null) {
             detailViewModel.loadUmkmDetails(umkmId)
-        }
-    }
-
-    // Show a toast on successful submission
-    LaunchedEffect(uiState.reviewSubmissionSuccess) {
-        if (uiState.reviewSubmissionSuccess) {
-            Toast.makeText(context, "Review submitted successfully!", Toast.LENGTH_SHORT).show()
-            detailViewModel.resetSubmissionStatus()
+            // Record category view for recommendations
+            if (umkm != null && currentUser != null) {
+                homeViewModel.recordCategoryView(currentUser!!.uid, umkm.category)
+            }
         }
     }
 
@@ -72,7 +77,7 @@ fun DetailScreen(
                 title = { Text(umkm?.name ?: "Detail") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
@@ -133,6 +138,27 @@ fun DetailScreen(
                             Text(umkm.category, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.secondary)
                             Text(umkm.description, style = MaterialTheme.typography.bodyLarge)
                             Text(umkm.address, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                            // "Hubungi" button for service-based UMKMs
+                            if (umkm.category == "Jasa" && umkm.contact.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Contact: ${umkm.contact}",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Button(onClick = {
+                                    val intent = Intent(Intent.ACTION_DIAL).apply {
+                                        data = Uri.parse("tel:${umkm.contact}")
+                                    }
+                                    context.startActivity(intent)
+                                }) {
+                                    Icon(Icons.Default.Call, contentDescription = "Hubungi UMKM")
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Hubungi")
+                                }
+                            }
                         }
                     }
 
@@ -159,27 +185,61 @@ fun DetailScreen(
                             SectionTitle("Menu")
                         }
                         items(uiState.menu) { menuItem ->
-                            ListItem(
-                                headlineContent = { Text(menuItem.name) },
-                                supportingContent = { Text("Rp ${"%,d".format(menuItem.price)}") },
-                                trailingContent = {
-                                    IconButton(onClick = { cartViewModel.addItem(menuItem) }) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                shape = MaterialTheme.shapes.medium, // Apply rounded shape
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(menuItem.name, style = MaterialTheme.typography.titleMedium)
+                                        Text(
+                                            "Rp ${"%,d".format(menuItem.price)}",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    IconButton(onClick = { cartViewModel.addItem(menuItem, umkm.name) }) {
                                         Icon(Icons.Default.Add, contentDescription = "Add to Cart")
                                     }
                                 }
-                            )
-                        }
-                    } else if (uiState.services.isNotEmpty()) {
+                            }
+                        }                    } else if (uiState.services.isNotEmpty()) {
                         item {
                             SectionTitle("Services")
                         }
                         items(uiState.services) { serviceItem ->
-                            ListItem(
-                                headlineContent = { Text(serviceItem.service) },
-                                trailingContent = { Text("Rp ${"%,d".format(serviceItem.price)}") }
-                            )
-                        }
-                    }
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                shape = MaterialTheme.shapes.medium, // Apply rounded shape
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(serviceItem.service, style = MaterialTheme.typography.titleMedium)
+                                    Text(
+                                        "Rp ${"%,d".format(serviceItem.price)}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }                    }
 
                     // Reviews Section
                     item {

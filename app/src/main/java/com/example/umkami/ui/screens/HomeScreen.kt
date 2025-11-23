@@ -7,19 +7,24 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.umkami.data.model.Umkm
+import com.example.umkami.viewmodel.AuthViewModel // Import AuthViewModel
 import com.example.umkami.viewmodel.CartViewModel
 import com.example.umkami.viewmodel.HomeViewModel
 import com.google.android.gms.maps.model.CameraPosition
@@ -29,10 +34,12 @@ import com.google.maps.android.compose.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    navController: NavController, // Add navController here
     onUmkmClick: (String) -> Unit,
     onCartClick: () -> Unit,
     homeVm: HomeViewModel = viewModel(), // Inject HomeViewModel
-    cartVm: CartViewModel = viewModel() // Inject CartViewModel
+    cartVm: CartViewModel = viewModel(), // Inject CartViewModel
+    authVm: AuthViewModel = viewModel() // Inject AuthViewModel
 ) {
     // Mode tampilan: List atau Map
     var isMapMode by remember { mutableStateOf(false) }
@@ -43,12 +50,28 @@ fun HomeScreen(
     val selectedCategory by homeVm.selectedCategory.collectAsState()
     val allCategories by homeVm.categories.collectAsState()
     val cartItemCount by cartVm.cartItems.collectAsState()
+    val recommendedUmkmList by homeVm.recommendedUmkmList.collectAsState() // Collect recommended list
+    val currentUser by authVm.currentUser.collectAsState() // Collect current user
+
+    // Load recommendations when currentUser changes
+    LaunchedEffect(currentUser) {
+        currentUser?.uid?.let { uid ->
+            homeVm.loadRecommendedUmkm(uid)
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(if (isMapMode) "UMKami Map View" else "UMKami Listings") },
                 actions = {
+                    // Profile Icon
+                    IconButton(onClick = { navController.navigate("profile") }) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Profile"
+                        )
+                    }
                     BadgedBox(
                         badge = {
                             if (cartItemCount.isNotEmpty()) {
@@ -72,7 +95,7 @@ fun HomeScreen(
         floatingActionButton = {
             FloatingActionButton(onClick = { isMapMode = !isMapMode }) {
                 Icon(
-                    imageVector = if (isMapMode) Icons.Default.List else Icons.Default.Map,
+                    imageVector = if (isMapMode) Icons.AutoMirrored.Filled.List else Icons.Default.Map,
                     contentDescription = null
                 )
             }
@@ -143,6 +166,24 @@ fun HomeScreen(
                     }
                 }
 
+                // Recommendations Section (NEW)
+                if (recommendedUmkmList.isNotEmpty()) {
+                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                        Text(
+                            text = "Rekomendasi Untuk Anda",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(recommendedUmkmList) { umkm ->
+                                RecommendedUmkmItem(umkm, onUmkmClick)
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+
                 // UMKM List (filtered)
                 LazyColumn(
                     modifier = Modifier
@@ -197,7 +238,7 @@ fun UmkmItem(umkm: Umkm, onUmkmClick: (String) -> Unit) {
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh // Use surfaceContainerHigh for contrast
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -233,6 +274,47 @@ fun UmkmItem(umkm: Umkm, onUmkmClick: (String) -> Unit) {
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RecommendedUmkmItem(umkm: Umkm, onUmkmClick: (String) -> Unit) {
+    Card(
+        onClick = { onUmkmClick(umkm.id) },
+        modifier = Modifier.width(180.dp), // Fixed width for recommendations in LazyRow
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column {
+            AsyncImage(
+                model = umkm.imageUrl,
+                contentDescription = umkm.name,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp),
+                contentScale = ContentScale.Crop
+            )
+
+            Column(Modifier.padding(horizontal = 8.dp, vertical = 8.dp)) {
+                Text(
+                    text = umkm.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = umkm.category,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary
                 )
             }
         }

@@ -38,7 +38,8 @@
         "address": "Jl. MT Haryono, Malang",
         "lat": -7.952,
         "lng": 112.621,
-        "imageUrl": "https://github.com/G4l1le30/project/blob/master/assets/images/umkm4/ayam%20geprek.png?raw=true"
+        "imageUrl": "https://github.com/G4l1le30/project/blob/master/assets/images/umkm4/ayam%20geprek.png?raw=true",
+        "contact": "+6281234567890"
       },
       "umkm4": {
         "id": "umkm4",
@@ -48,17 +49,18 @@
         "address": "Jl. Kerto Leksono, Malang",
         "lat": -7.958,
         "lng": 112.618,
-        "imageUrl": "https://github.com/G4l1le30/project/blob/master/assets/images/umkm5/toko%20kaos%20arema.png?raw=true"
+        "imageUrl": "https://github.com/G4l1le30/project/blob/master/assets/images/umkm4/ayam%20geprek.png?raw=true"
       },
       "umkm5": {
         "id": "umkm5",
-        "name": "Toko Kaos Arema",
-        "category": "Fashion",
-        "description": "Menjual kaos Arema dan merchandise lokal lainnya.",
-        "address": "Jl. Bandung, Malang",
-        "lat": -7.961,
-        "lng": 112.629,
-        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5a/Tshirt_mockup.png"
+        "name": "Cetak Cepat Digital Printing",
+        "category": "Jasa",
+        "description": "Layanan print, jilid, dan desain grafis. Solusi cepat untuk kebutuhan tugas dan skripsi.",
+        "address": "Jl. Sumbersari, Malang",
+        "lat": -7.9625,
+        "lng": 112.617,
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/89/Photocopy_shop.jpg",
+        "contact": "+6281122334455"
       },
       "umkm6": {
         "id": "umkm6",
@@ -78,7 +80,8 @@
         "address": "Jl. Mayjen Panjaitan, Malang",
         "lat": -7.953,
         "lng": 112.620,
-        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/89/Photocopy_shop.jpg"
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/89/Photocopy_shop.jpg",
+        "contact": "+62850987654321"
       },
       "umkm8": {
         "id": "umkm8",
@@ -92,13 +95,13 @@
       },
       "umkm9": {
         "id": "umkm9",
-        "name": "Kerajinan Kayu Pak Eko",
-        "category": "Kerajinan",
-        "description": "Produk kerajinan tangan dari kayu, ramah lingkungan dan unik.",
-        "address": "Jl. Tlogomas, Malang",
-        "lat": -7.932,
-        "lng": 112.594,
-        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/67/Wooden_bowl.jpg"
+        "name": "Seblak Jeletot Teh Eni",
+        "category": "Makanan",
+        "description": "Seblak pedas dengan berbagai topping, dari ceker sampai sosis. Level pedas bisa diatur.",
+        "address": "Jl. Bendungan Sutami, Malang",
+        "lat": -7.965,
+        "lng": 112.614,
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a2/Seblak_Ceker.jpg"
       }
     },
 
@@ -132,6 +135,11 @@
         { "name": "Es Teh Original", "price": 5000 },
         { "name": "Es Teh Lemon", "price": 7000 },
         { "name": "Es Teh Lychee", "price": 8000 }
+      ],
+      "umkm9": [
+        { "name": "Seblak Original", "price": 12000 },
+        { "name": "Seblak Ceker", "price": 15000 },
+        { "name": "Seblak Sosis Bakso", "price": 17000 }
       ]
     },
 
@@ -141,16 +149,16 @@
         { "service": "Laundry Kilat 4 Jam", "price": 15000 },
         { "service": "Cuci Kering Setrika", "price": 10000 }
       ],
+      "umkm5": [
+        { "service": "Print A4 Hitam Putih", "price": 500 },
+        { "service": "Jilid Spiral Kawat", "price": 10000 },
+        { "service": "Cetak Banner (per meter)", "price": 25000 }
+      ],
       "umkm7": [
         { "service": "Fotocopy", "price": 200 },
         { "service": "Print Hitam Putih", "price": 500 },
         { "service": "Print Warna", "price": 1500 },
         { "service": "Jilid Spiral", "price": 6000 }
-      ],
-      "umkm9": [
-        { "service": "Custom Ukiran Nama", "price": 25000 },
-        { "service": "Pembuatan Souvenir Kayu", "price": 15000 },
-        { "service": "Perbaikan Produk Kayu", "price": 30000 }
       ]
     },
 
@@ -181,9 +189,9 @@
         "r3": "Harga terjangkau, Ayam Geprek Pak D recommended."
       },
       "umkm5": {
-        "r1": "Toko Kaos Arema mantap, kualitas sangat bagus.",
-        "r2": "Pelayanan di Toko Kaos Arema cepat dan ramah.",
-        "r3": "Harga terjangkau, Toko Kaos Arema recommended."
+        "r1": "Hasil print di Cetak Cepat bagus dan tidak luntur.",
+        "r2": "Pelayanannya ramah dan prosesnya cepat.",
+        "r3": "Harga jilidnya terjangkau untuk mahasiswa."
       },
       "umkm6": {
         "r1": "Sate Ayu mantap, kualitas sangat bagus.",
@@ -201,9 +209,9 @@
         "r3": "Harga terjangkau, Es Teh Jumbo 5K recommended."
       },
       "umkm9": {
-        "r1": "Kerajinan Kayu Pak Eko mantap, kualitas sangat bagus.",
-        "r2": "Pelayanan di Kerajinan Kayu Pak Eko cepat dan ramah.",
-        "r3": "Harga terjangkau, Kerajinan Kayu Pak Eko recommended."
+        "r1": "Seblaknya nampol, pedasnya pas!",
+        "r2": "Banyak pilihan topping, tempatnya juga bersih.",
+        "r3": "Harga murah, porsi banyak, mantap."
       }
     }
   }

@@ -10,20 +10,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.SharingStarted // Added this import
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class CartViewModel : ViewModel() {
 
-    private val repository = UmkmRepository() // To place the order later
+    private val repository = UmkmRepository()
 
-    // Backing property for cart items
     private val _cartItems = MutableStateFlow<List<CartItem>>(emptyList())
-    // Publicly exposed immutable StateFlow for the UI to observe
     val cartItems: StateFlow<List<CartItem>> = _cartItems.asStateFlow()
 
-    // Total price is reactively calculated from cartItems
     val totalPrice: StateFlow<Double> = _cartItems.map { items ->
         items.sumOf { it.item.price.toDouble() * it.quantity }
     }.stateIn(
@@ -32,58 +29,80 @@ class CartViewModel : ViewModel() {
         initialValue = 0.0
     )
 
-    fun addItem(menuItem: MenuItem) {
+    val groupedCartItems: StateFlow<Map<String, List<CartItem>>> = _cartItems.map { items ->
+        items.groupBy { it.umkmName }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyMap()
+    )
+
+    fun addItem(menuItem: MenuItem, umkmName: String) {
         val currentItems = _cartItems.value.toMutableList()
-        val existingItem = currentItems.find { it.item.name == menuItem.name }
+        val existingItem = currentItems.find { it.item.name == menuItem.name && it.umkmId == menuItem.umkmId }
 
         if (existingItem != null) {
-            // Item exists, increase quantity
             val updatedItem = existingItem.copy(quantity = existingItem.quantity + 1)
             val itemIndex = currentItems.indexOf(existingItem)
             currentItems[itemIndex] = updatedItem
         } else {
-            // Item does not exist, add as new
-            currentItems.add(CartItem(item = menuItem, quantity = 1))
+            currentItems.add(CartItem(item = menuItem, quantity = 1, umkmId = menuItem.umkmId, umkmName = umkmName))
         }
         _cartItems.value = currentItems
     }
 
-    fun removeItem(menuItem: MenuItem) {
+    fun removeItem(menuItem: MenuItem, umkmName: String) {
         val currentItems = _cartItems.value.toMutableList()
-        val existingItem = currentItems.find { it.item.name == menuItem.name }
+        val existingItem = currentItems.find { it.item.name == menuItem.name && it.umkmId == menuItem.umkmId }
 
         if (existingItem != null) {
             if (existingItem.quantity > 1) {
-                // Item quantity > 1, decrease quantity
                 val updatedItem = existingItem.copy(quantity = existingItem.quantity - 1)
                 val itemIndex = currentItems.indexOf(existingItem)
                 currentItems[itemIndex] = updatedItem
             } else {
-                // Item quantity is 1, remove from cart
                 currentItems.remove(existingItem)
             }
             _cartItems.value = currentItems
         }
     }
 
-    fun placeOrder(umkmId: String, callback: (Boolean) -> Unit) {
+    fun placeOrder(userId: String, callback: (Boolean) -> Unit) {
         if (_cartItems.value.isEmpty()) {
             callback(false)
             return
         }
-
-        val newOrder = Order(
-            umkmId = umkmId,
-            items = _cartItems.value,
-            totalPrice = totalPrice.value
-        )
+        if (userId.isBlank()) {
+            callback(false)
+            return
+        }
 
         viewModelScope.launch {
-            val success = repository.placeOrder(newOrder)
-            if (success) {
-                _cartItems.value = emptyList() // Clear cart on successful order
+            val groupedOrders = _cartItems.value.groupBy { it.umkmId }
+            var allOrdersSuccessful = true
+
+            for ((umkmId, itemsForUmkm) in groupedOrders) {
+                val umkmTotalPrice = itemsForUmkm.sumOf { it.item.price.toDouble() * it.quantity }
+                
+                val newOrder = Order(
+                    userId = userId,
+                    umkmId = umkmId,
+                    items = itemsForUmkm,
+                    totalPrice = umkmTotalPrice,
+                    orderTimestamp = System.currentTimeMillis()
+                )
+                
+                val success = repository.placeOrder(newOrder)
+                if (!success) {
+                    allOrdersSuccessful = false
+                    break
+                }
             }
-            callback(success)
+
+            if (allOrdersSuccessful) {
+                _cartItems.value = emptyList()
+            }
+            callback(allOrdersSuccessful)
         }
     }
 }

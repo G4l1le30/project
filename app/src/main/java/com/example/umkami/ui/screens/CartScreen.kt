@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -21,16 +22,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.umkami.data.model.CartItem
+import com.example.umkami.viewmodel.AuthViewModel
 import com.example.umkami.viewmodel.CartViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CartScreen(
     navController: NavController,
-    cartViewModel: CartViewModel
+    cartViewModel: CartViewModel,
+    authViewModel: AuthViewModel // Inject AuthViewModel
 ) {
-    val cartItems by cartViewModel.cartItems.collectAsState()
+    // Use groupedCartItems for multi-vendor display
+    val groupedCartItems by cartViewModel.groupedCartItems.collectAsState()
     val totalPrice by cartViewModel.totalPrice.collectAsState()
+    val currentUser by authViewModel.currentUser.collectAsState()
     val context = LocalContext.current
 
     Scaffold(
@@ -39,13 +44,13 @@ fun CartScreen(
                 title = { Text("My Cart") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
         },
         bottomBar = {
-            if (cartItems.isNotEmpty()) {
+            if (groupedCartItems.isNotEmpty()) {
                 BottomAppBar(
                     containerColor = MaterialTheme.colorScheme.surface,
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
@@ -62,20 +67,21 @@ fun CartScreen(
                         )
                         Button(
                             onClick = {
-                                // Assumption: all items in cart are from the same UMKM.
-                                // We get the umkmId from the first item.
-                                val umkmId = cartItems.first().item.umkmId
-                                cartViewModel.placeOrder(umkmId) { success ->
-                                    if (success) {
-                                        Toast.makeText(context, "Order placed successfully!", Toast.LENGTH_SHORT).show()
-                                        navController.popBackStack() // Go back after ordering
-                                    } else {
-                                        Toast.makeText(context, "Failed to place order.", Toast.LENGTH_SHORT).show()
+                                val uid = currentUser?.uid
+                                if (uid != null) {
+                                    cartViewModel.placeOrder(uid) { success ->
+                                        if (success) {
+                                            Toast.makeText(context, "Order placed successfully!", Toast.LENGTH_SHORT).show()
+                                            navController.popBackStack()
+                                        } else {
+                                            Toast.makeText(context, "Failed to place order.", Toast.LENGTH_SHORT).show()
+                                        }
                                     }
-
+                                } else {
+                                    Toast.makeText(context, "You must be logged in to place an order.", Toast.LENGTH_SHORT).show()
                                 }
                             },
-                            enabled = cartItems.isNotEmpty()
+                            enabled = groupedCartItems.isNotEmpty()
                         ) {
                             Text("Place Order")
                         }
@@ -84,7 +90,7 @@ fun CartScreen(
             }
         }
     ) { paddingValues ->
-        if (cartItems.isEmpty()) {
+        if (groupedCartItems.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize().padding(paddingValues),
                 contentAlignment = Alignment.Center
@@ -101,15 +107,27 @@ fun CartScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
                     .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(vertical = 16.dp)
             ) {
-                items(cartItems) { cartItem ->
-                    CartItemRow(
-                        cartItem = cartItem,
-                        onAddItem = { cartViewModel.addItem(cartItem.item) },
-                        onRemoveItem = { cartViewModel.removeItem(cartItem.item) }
-                    )
+                groupedCartItems.forEach { (umkmName, items) ->
+                    // Header for each UMKM group
+                    item {
+                        Text(
+                            text = "Pesanan dari: $umkmName",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                    // Items for this UMKM
+                    items(items) { cartItem ->
+                        CartItemRow(
+                            cartItem = cartItem,
+                            onAddItem = { cartViewModel.addItem(cartItem.item, cartItem.umkmName) },
+                            onRemoveItem = { cartViewModel.removeItem(cartItem.item, cartItem.umkmName) }
+                        )
+                    }
                 }
             }
         }
@@ -123,7 +141,9 @@ fun CartItemRow(
     onRemoveItem: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Row(
             modifier = Modifier
@@ -151,11 +171,3 @@ fun CartItemRow(
         }
     }
 }
-
-// We need to add `umkmId` to the MenuItem model to make this work
-// Let's modify MenuItem.kt
-// data class MenuItem(
-//     val name: String = "",
-//     val price: Int = 0,
-//     val umkmId: String = "" // Add this field
-// )

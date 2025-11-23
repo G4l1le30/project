@@ -56,10 +56,11 @@ dependencies {
     implementation(libs.androidx.material3)
 
     // WAJIB: BOM harus di atas semua dependency firebase
-    implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
+    implementation(platform("com.google.firebase:firebase-bom:33.0.0"))
 
     // PERBAIKAN: Tambahkan versi eksplisit untuk DATABASE KTX
-    implementation("com.google.firebase:firebase-database-ktx:21.0.0")
+    implementation("com.google.firebase:firebase-database-ktx")
+    implementation("com.google.firebase:firebase-auth-ktx")
 
     implementation("com.google.firebase:firebase-analytics")
     implementation("androidx.navigation:navigation-compose:2.7.7")
