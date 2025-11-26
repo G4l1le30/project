@@ -35,24 +35,34 @@ fun LoginScreen(
     val isLoading by authViewModel.isLoading.collectAsState()
     val error by authViewModel.error.collectAsState()
     val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
+    val currentUser by authViewModel.currentUser.collectAsState()
 
     // Handle authentication success
-    LaunchedEffect(isAuthenticated) {
+    LaunchedEffect(isAuthenticated, currentUser) {
         if (isAuthenticated) {
-            // Navigate to home screen or previous screen
-            // Navigate to home screen
-            navController.navigate("home") {
-                popUpTo("login") { inclusive = true } // Pop login screen from back stack
+            val user = currentUser
+            if (user != null) {
+                if (user.role == "owner") {
+                    navController.navigate("owner_dashboard") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                } else {
+                    navController.navigate("home") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                }
+                Toast.makeText(context, "Login Successful!", Toast.LENGTH_SHORT).show()
             }
-            Toast.makeText(context, "Login Successful!", Toast.LENGTH_SHORT).show()
         }
     }
 
     // Handle authentication errors
     LaunchedEffect(error) {
         error?.let {
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-            authViewModel.clearError()
+            if (it.isNotEmpty() && it != "User data not found in database for UID: null") {
+                Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+                authViewModel.clearError()
+            }
         }
     }
 

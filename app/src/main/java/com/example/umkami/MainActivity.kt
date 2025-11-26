@@ -26,10 +26,12 @@ import com.example.umkami.ui.screens.SplashScreen
 import com.example.umkami.ui.screens.OrderHistoryScreen
 import com.example.umkami.ui.screens.AddressScreen
 import com.example.umkami.ui.screens.WishlistScreen
+import com.example.umkami.ui.screens.OwnerDashboardScreen
 import com.example.umkami.ui.theme.UmkamiTheme
 import com.example.umkami.viewmodel.AuthViewModel
 import com.example.umkami.viewmodel.CartViewModel
 import com.example.umkami.viewmodel.HomeViewModel
+import com.example.umkami.viewmodel.OwnerDashboardViewModel
 import com.example.umkami.viewmodel.WishlistViewModel
 
 class MainActivity : ComponentActivity() {
@@ -42,8 +44,10 @@ class MainActivity : ComponentActivity() {
             val cartVm: CartViewModel = viewModel()
             val authVm: AuthViewModel = viewModel()
             val wishlistVm: WishlistViewModel = viewModel()
+            val ownerDashboardVm: OwnerDashboardViewModel = viewModel()
 
             val isAuthenticated by authVm.isAuthenticated.collectAsState()
+            val currentUser by authVm.currentUser.collectAsState()
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route
 
@@ -67,10 +71,19 @@ class MainActivity : ComponentActivity() {
                     ) {
                         composable("splash") {
                             SplashScreen(navController = navController)
-                            LaunchedEffect(isAuthenticated) {
+                            LaunchedEffect(isAuthenticated, currentUser) {
                                 if (isAuthenticated) {
-                                    navController.navigate("home") {
-                                        popUpTo("splash") { inclusive = true }
+                                    val user = currentUser
+                                    if (user != null) {
+                                        if (user.role == "owner") {
+                                            navController.navigate("owner_dashboard") {
+                                                popUpTo("splash") { inclusive = true }
+                                            }
+                                        } else {
+                                            navController.navigate("home") {
+                                                popUpTo("splash") { inclusive = true }
+                                            }
+                                        }
                                     }
                                  } else {
                                     navController.navigate("login") {
@@ -94,7 +107,11 @@ class MainActivity : ComponentActivity() {
                                 onNavigateToOrderHistory = { navController.navigate("orderHistory") },
                                 onNavigateToAddress = { navController.navigate("address") },
                                 onNavigateToCart = { navController.navigate("cart") },
-                                onNavigateToLogin = { navController.navigate("login") }
+                                onNavigateToLogin = {
+                                    navController.navigate("login") {
+                                        popUpTo("home") { inclusive = true }
+                                    }
+                                }
                             )
                         }
 
@@ -145,6 +162,14 @@ class MainActivity : ComponentActivity() {
                                 onUmkmClick = { umkmId ->
                                     navController.navigate("detail/$umkmId")
                                 }
+                            )
+                        }
+
+                        composable("owner_dashboard") {
+                            OwnerDashboardScreen(
+                                navController = navController,
+                                authViewModel = authVm,
+                                ownerDashboardViewModel = ownerDashboardVm
                             )
                         }
                     }

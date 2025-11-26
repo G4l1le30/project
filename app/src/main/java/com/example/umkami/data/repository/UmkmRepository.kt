@@ -193,6 +193,32 @@ class UmkmRepository {
         })
     }
 
+    suspend fun saveUmkm(umkm: Umkm, userId: String): String = suspendCancellableCoroutine { continuation ->
+        val umkmToSave = umkm.copy()
+        var umkmId = umkmToSave.id
+
+        if (umkmId.isBlank()) {
+            umkmId = dbUmkm.push().key ?: ""
+            umkmToSave.id = umkmId
+        }
+
+        dbUmkm.child(umkmId).setValue(umkmToSave)
+            .addOnSuccessListener {
+                dbRoot.child("users").child(userId).child("umkmId").setValue(umkmId)
+                    .addOnSuccessListener {
+                        if (continuation.isActive) continuation.resume(umkmId)
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("UmkmRepository", "Failed to update user's umkmId: ${e.message}")
+                        if (continuation.isActive) continuation.resume(umkmId) // Still resume, but log error
+                    }
+            }
+            .addOnFailureListener { e ->
+                Log.e("UmkmRepository", "Failed to save UMKM: ${e.message}")
+                if (continuation.isActive) continuation.resume("")
+            }
+    }
+
     // ============================================================
     // 9. Wishlist
     // ============================================================
@@ -241,6 +267,26 @@ class UmkmRepository {
         })
     }
 
+
+    suspend fun saveMenu(umkmId: String, menu: List<MenuItem>): Boolean = suspendCancellableCoroutine { continuation ->
+        dbMenu.child(umkmId).setValue(menu)
+            .addOnSuccessListener {
+                if (continuation.isActive) continuation.resume(true)
+            }
+            .addOnFailureListener {
+                if (continuation.isActive) continuation.resume(false)
+            }
+    }
+
+    suspend fun saveServices(umkmId: String, services: List<ServiceItem>): Boolean = suspendCancellableCoroutine { continuation ->
+        dbService.child(umkmId).setValue(services)
+            .addOnSuccessListener {
+                if (continuation.isActive) continuation.resume(true)
+            }
+            .addOnFailureListener {
+                if (continuation.isActive) continuation.resume(false)
+            }
+    }
 
     // ============================================================
     // ALTERNATIF: Callback (Kalau Compose kamu butuh callback)

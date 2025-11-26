@@ -32,6 +32,9 @@ fun RegisterScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    var displayName by remember { mutableStateOf("") }
+    var role by remember { mutableStateOf("customer") } // "customer" or "owner"
+
     val context = LocalContext.current
     val isLoading by authViewModel.isLoading.collectAsState()
     val error by authViewModel.error.collectAsState()
@@ -69,6 +72,15 @@ fun RegisterScreen(
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 32.dp)
             )
+
+            OutlinedTextField(
+                value = displayName,
+                onValueChange = { displayName = it },
+                label = { Text("Nama Lengkap") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
                 value = email,
@@ -115,6 +127,25 @@ fun RegisterScreen(
                     focusedBorderColor = MaterialTheme.colorScheme.primary
                 )
             )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Role Selection
+            Column(Modifier.fillMaxWidth()) {
+                Text("Daftar sebagai:", style = MaterialTheme.typography.bodyLarge)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(
+                        selected = role == "customer",
+                        onClick = { role = "customer" }
+                    )
+                    Text("Pembeli")
+                    Spacer(Modifier.width(16.dp))
+                    RadioButton(
+                        selected = role == "owner",
+                        onClick = { role = "owner" }
+                    )
+                    Text("Pemilik UMKM")
+                }
+            }
             Spacer(modifier = Modifier.height(24.dp))
 
             if (isLoading) {
@@ -123,7 +154,11 @@ fun RegisterScreen(
                 GradientButton(
                     onClick = {
                         if (password == confirmPassword) {
-                            authViewModel.register(email, password)
+                            if(displayName.isNotBlank()) {
+                                authViewModel.register(email, password, displayName, role)
+                            } else {
+                                Toast.makeText(context, "Nama tidak boleh kosong!", Toast.LENGTH_SHORT).show()
+                            }
                         } else {
                             Toast.makeText(context, "Password tidak cocok!", Toast.LENGTH_SHORT).show()
                         }

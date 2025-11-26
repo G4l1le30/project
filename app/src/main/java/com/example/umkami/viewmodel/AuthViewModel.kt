@@ -71,7 +71,7 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    fun register(email: String, password: String) {
+    fun register(email: String, password: String, displayName: String, role: String) {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
@@ -82,8 +82,10 @@ class AuthViewModel : ViewModel() {
                     val newUser = User(
                         uid = firebaseUser.uid,
                         email = firebaseUser.email ?: "",
-                        displayName = firebaseUser.email?.substringBefore('@') ?: "Pengguna Baru",
-                        address = "" // Initialize address for new user
+                        displayName = displayName,
+                        address = "", // Initialize address for new user
+                        role = role,
+                        umkmId = if (role == "owner") "" else null // Initialize umkmId if owner
                     )
                     usersRef.child(newUser.uid).setValue(newUser).await()
                     // The authStateListener will set the user, but we can set it here for immediate feedback
