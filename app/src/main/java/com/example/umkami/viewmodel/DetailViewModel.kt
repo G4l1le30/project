@@ -34,6 +34,9 @@ class DetailViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(DetailUiState())
     val uiState: StateFlow<DetailUiState> = _uiState.asStateFlow()
 
+    private val _isWishlisted = MutableStateFlow(false)
+    val isWishlisted: StateFlow<Boolean> = _isWishlisted.asStateFlow()
+
     // State for the review form
     var reviewAuthor by mutableStateOf("")
     var reviewComment by mutableStateOf("")
@@ -92,6 +95,26 @@ class DetailViewModel : ViewModel() {
             } else {
                 // Optional: show an error message in the UI
             }
+        }
+    }
+
+    fun checkIfWishlisted(userId: String, umkmId: String) {
+        viewModelScope.launch {
+            _isWishlisted.value = repository.isWishlisted(userId, umkmId)
+        }
+    }
+
+    fun addToWishlist(userId: String, umkmId: String) {
+        viewModelScope.launch {
+            repository.addToWishlist(userId, umkmId)
+            _isWishlisted.value = true
+        }
+    }
+
+    fun removeFromWishlist(userId: String, umkmId: String) {
+        viewModelScope.launch {
+            repository.removeFromWishlist(userId, umkmId)
+            _isWishlisted.value = false
         }
     }
 

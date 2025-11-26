@@ -12,8 +12,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.umkami.ui.theme.WarmOrange
-import com.example.umkami.ui.theme.PlayfulPink
 
 @Composable
 fun GradientButton(
@@ -23,7 +21,7 @@ fun GradientButton(
     enabled: Boolean = true
 ) {
     val gradient = Brush.horizontalGradient(
-        colors = listOf(WarmOrange, PlayfulPink),
+        colors = listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary),
     )
 
     Box(

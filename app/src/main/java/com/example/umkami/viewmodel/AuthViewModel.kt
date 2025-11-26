@@ -35,86 +35,74 @@ class AuthViewModel : ViewModel() {
     private val _currentUser = MutableStateFlow<User?>(null)
     val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
 
-    init {
-        if (auth.currentUser != null) {
-            loadCurrentUser(auth.currentUser!!.uid)
+    private val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+        val firebaseUser = firebaseAuth.currentUser
+        _isAuthenticated.value = firebaseUser != null
+        if (firebaseUser != null) {
+            viewModelScope.launch {
+                loadCurrentUser(firebaseUser.uid)
+            }
+        } else {
+            _currentUser.value = null
         }
     }
 
-    fun login(email: String, password: String) {
-        _isLoading.value = true
-        _error.value = null
-        _isAuthenticated.value = false
+    init {
+        auth.addAuthStateListener(authStateListener)
+    }
 
+    override fun onCleared() {
+        super.onCleared()
+        auth.removeAuthStateListener(authStateListener)
+    }
+
+    fun login(email: String, password: String) {
         viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
             try {
-                auth.signInWithEmailAndPassword(email, password)
-                    .addOnCompleteListener { task ->
-                        _isLoading.value = false
-                        if (task.isSuccessful) {
-                            val uid = task.result?.user?.uid
-                            if (uid != null) {
-                                loadCurrentUser(uid)
-                                _isAuthenticated.value = true
-                            } else {
-                                _error.value = "UID pengguna tidak ditemukan setelah login."
-                            }
-                        } else {
-                            _error.value = task.exception?.message ?: "Login gagal!"
-                        }
-                    }
+                // The authStateListener will handle the result of this
+                auth.signInWithEmailAndPassword(email, password).await()
             } catch (e: Exception) {
+                _error.value = e.message ?: "Login gagal!"
+            } finally {
                 _isLoading.value = false
-                _error.value = e.message ?: "Terjadi kesalahan tak terduga."
             }
         }
     }
 
     fun register(email: String, password: String) {
-        _isLoading.value = true
-        _error.value = null
-        _isRegistered.value = false
-
         viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
             try {
-                auth.createUserWithEmailAndPassword(email, password)
-                    .addOnCompleteListener { task ->
-                        _isLoading.value = false
-                        if (task.isSuccessful) {
-                            val firebaseUser = task.result?.user
-                            if (firebaseUser != null) {
-                                val newUser = User(
-                                    uid = firebaseUser.uid,
-                                    email = firebaseUser.email ?: "",
-                                    displayName = firebaseUser.email?.substringBefore('@') ?: "Pengguna Baru",
-                                    address = "" // Initialize address for new user
-                                )
-                                usersRef.child(newUser.uid).setValue(newUser)
-                                    .addOnSuccessListener {
-                                        _currentUser.value = newUser
-                                        _isRegistered.value = true
-                                    }
-                                    .addOnFailureListener { dbError ->
-                                        _error.value = dbError.message ?: "Gagal menyimpan data pengguna."
-                                    }
-                            } else {
-                                _error.value = "Pengguna Firebase tidak ditemukan setelah pendaftaran."
-                            }
-                        } else {
-                            _error.value = task.exception?.message ?: "Pendaftaran gagal!"
-                        }
-                    }
+                val result = auth.createUserWithEmailAndPassword(email, password).await()
+                val firebaseUser = result.user
+                if (firebaseUser != null) {
+                    val newUser = User(
+                        uid = firebaseUser.uid,
+                        email = firebaseUser.email ?: "",
+                        displayName = firebaseUser.email?.substringBefore('@') ?: "Pengguna Baru",
+                        address = "" // Initialize address for new user
+                    )
+                    usersRef.child(newUser.uid).setValue(newUser).await()
+                    // The authStateListener will set the user, but we can set it here for immediate feedback
+                    _currentUser.value = newUser
+                    _isRegistered.value = true
+                } else {
+                    _error.value = "Pengguna Firebase tidak ditemukan setelah pendaftaran."
+                }
             } catch (e: Exception) {
+                _error.value = e.message ?: "Pendaftaran gagal!"
+            } finally {
                 _isLoading.value = false
-                _error.value = e.message ?: "Terjadi kesalahan tak terduga."
             }
         }
     }
 
     fun logout() {
+        // The authStateListener will handle the result of this
         auth.signOut()
-        _isAuthenticated.value = false
-        _currentUser.value = null
     }
 
     fun clearError() {
@@ -142,18 +130,24 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    private fun loadCurrentUser(uid: String) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
-                val dataSnapshot = usersRef.child(uid).get().await()
+    private suspend fun loadCurrentUser(uid: String) {
+        _isLoading.value = true
+        try {
+            val dataSnapshot = usersRef.child(uid).get().await()
+            if (dataSnapshot.exists()) {
                 val user = dataSnapshot.getValue(User::class.java)
-                _currentUser.value = user
-            } catch (e: Exception) {
-                _error.value = e.message ?: "Gagal memuat data pengguna."
-            } finally {
-                _isLoading.value = false
+                if (user != null) {
+                    _currentUser.value = user
+                } else {
+                    _error.value = "User data found for UID: $uid, but it could not be parsed."
+                }
+            } else {
+                _error.value = "User data not found in database for UID: $uid"
             }
+        } catch (e: Exception) {
+            _error.value = "Failed to load user data: ${e.message}"
+        } finally {
+            _isLoading.value = false
         }
     }
 }

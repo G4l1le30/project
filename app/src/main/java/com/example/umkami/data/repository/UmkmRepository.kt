@@ -20,7 +20,8 @@ class UmkmRepository {
     private val dbMenu = dbRoot.child("umkm_menu")
     private val dbService = dbRoot.child("umkm_services")
     private val dbReviews = dbRoot.child("reviews")
-    private val dbOrders = dbRoot.child("orders") // New reference for orders
+    private val dbOrders = dbRoot.child("orders")
+    private val dbWishlist = dbRoot.child("wishlist")
 
     // ============================================================
     // 1. Ambil semua UMKM
@@ -188,6 +189,54 @@ class UmkmRepository {
             override fun onCancelled(error: DatabaseError) {
                 Log.e("UmkmRepository", "Error getting orders by user ID: ${error.message}")
                 if (continuation.isActive) continuation.resume(emptyList())
+            }
+        })
+    }
+
+    // ============================================================
+    // 9. Wishlist
+    // ============================================================
+    suspend fun addToWishlist(userId: String, umkmId: String): Boolean = suspendCancellableCoroutine { continuation ->
+        dbWishlist.child(userId).child(umkmId).setValue(true)
+            .addOnSuccessListener {
+                if (continuation.isActive) continuation.resume(true)
+            }
+            .addOnFailureListener {
+                if (continuation.isActive) continuation.resume(false)
+            }
+    }
+
+    suspend fun removeFromWishlist(userId: String, umkmId: String): Boolean = suspendCancellableCoroutine { continuation ->
+        dbWishlist.child(userId).child(umkmId).removeValue()
+            .addOnSuccessListener {
+                if (continuation.isActive) continuation.resume(true)
+            }
+            .addOnFailureListener {
+                if (continuation.isActive) continuation.resume(false)
+            }
+    }
+
+    suspend fun getWishlist(userId: String): List<String> = suspendCancellableCoroutine { continuation ->
+        dbWishlist.child(userId).addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val wishlist = snapshot.children.mapNotNull { it.key }
+                if (continuation.isActive) continuation.resume(wishlist)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                if (continuation.isActive) continuation.resume(emptyList())
+            }
+        })
+    }
+
+    suspend fun isWishlisted(userId: String, umkmId: String): Boolean = suspendCancellableCoroutine { continuation ->
+        dbWishlist.child(userId).child(umkmId).addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (continuation.isActive) continuation.resume(snapshot.exists())
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                if (continuation.isActive) continuation.resume(false)
             }
         })
     }

@@ -15,42 +15,29 @@ import androidx.navigation.NavController
 import com.example.umkami.ui.components.GradientButton
 import com.example.umkami.ui.theme.UmkamiTheme
 import com.example.umkami.viewmodel.AuthViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel // Add this import
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.tooling.preview.Preview
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    navController: NavController,
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    onNavigateToOrderHistory: () -> Unit,
+    onNavigateToAddress: () -> Unit,
+    onNavigateToCart: () -> Unit,
+    onNavigateToLogin: () -> Unit
 ) {
-    val currentUser by authViewModel.currentUser.collectAsState()
     val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
+    val currentUser by authViewModel.currentUser.collectAsState()
     val context = LocalContext.current
 
-    LaunchedEffect(isAuthenticated) {
-        if (!isAuthenticated) {
-            // If logged out, navigate back to login screen
-            navController.navigate("login") {
-                popUpTo("home") { inclusive = true } // Clear back stack up to home
-            }
-            Toast.makeText(context, "Logout successful!", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Profil Pengguna") })
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        if (isAuthenticated) {
             if (currentUser != null) {
                 Icon(
                     imageVector = Icons.Default.Person,
@@ -60,35 +47,32 @@ fun ProfileScreen(
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = "Email: ${currentUser?.email}",
+                    text = "Email: ${currentUser?.email ?: "Data tidak tersedia"}",
                     style = MaterialTheme.typography.titleMedium
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Nama: ${currentUser?.displayName}",
+                    text = "Nama: ${currentUser?.displayName ?: "Data tidak tersedia"}",
                     style = MaterialTheme.typography.titleMedium
                 )
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Order History Button
                 GradientButton(
-                    onClick = { navController.navigate("orderHistory") },
+                    onClick = onNavigateToOrderHistory,
                     text = "Riwayat Pesanan",
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Address Button
                 GradientButton(
-                    onClick = { navController.navigate("address") },
+                    onClick = onNavigateToAddress,
                     text = "Alamat Saya",
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // My Cart Button
                 GradientButton(
-                    onClick = { navController.navigate("cart") },
+                    onClick = onNavigateToCart,
                     text = "Keranjang Saya",
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -100,14 +84,19 @@ fun ProfileScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
             } else {
-                Text(
-                    text = "Anda belum login.",
-                    style = MaterialTheme.typography.titleMedium
-                )
+                // Authenticated, but user data is still loading
+                CircularProgressIndicator()
                 Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = { navController.navigate("login") }) {
-                    Text("Login Sekarang")
-                }
+                Text(text = "Memuat data pengguna...")
+            }
+        } else {
+            Text(
+                text = "Anda belum login.",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(onClick = onNavigateToLogin) {
+                Text("Login Sekarang")
             }
         }
     }
@@ -117,6 +106,12 @@ fun ProfileScreen(
 @Composable
 fun PreviewProfileScreen() {
     UmkamiTheme {
-        ProfileScreen(navController = NavController(LocalContext.current), authViewModel = viewModel())
+        ProfileScreen(
+            authViewModel = viewModel(),
+            onNavigateToOrderHistory = {},
+            onNavigateToAddress = {},
+            onNavigateToCart = {},
+            onNavigateToLogin = {}
+        )
     }
 }

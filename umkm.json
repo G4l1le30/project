@@ -227,6 +227,8 @@
     "umkm3": {
       "address": "Jl. MT Haryono, Malang",
       "category": "Jasa",
+      "contact": "081234567890",
+      "whatsapp": "+6281234567890",
       "description": "Layanan laundry cepat 4 jam selesai dengan harga mahasiswa.",
       "id": "umkm3",
       "imageUrl": "https://github.com/G4l1le30/project/blob/master/assets/images/umkm3/laundry.jpg?raw=true",
@@ -257,6 +259,8 @@
     "umkm7": {
       "address": "Jl. Mayjen Panjaitan, Malang",
       "category": "Jasa",
+      "contact": "089876543210",
+      "whatsapp": "+6289876543210",
       "description": "Fotocopy dan print murah, dekat kampus dan buka sampai malam.",
       "id": "umkm7",
       "imageUrl": "https://github.com/G4l1le30/project/blob/master/assets/images/umkm7/umkm7.png?raw=true",
@@ -417,7 +421,8 @@
     "vPi5S4AfjCgbNDZe6eEn7bN3Nwg2": {
       "displayName": "joshua",
       "email": "joshua@gmail.com",
-      "uid": "vPi5S4AfjCgbNDZe6eEn7bN3Nwg2"
+      "uid": "vPi5S4AfjCgbNDZe6eEn7bN3Nwg2",
+      "address": ""
     }
   }
 }

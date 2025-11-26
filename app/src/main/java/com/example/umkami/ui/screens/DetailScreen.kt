@@ -2,6 +2,7 @@ package com.example.umkami.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -13,6 +14,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -35,7 +38,8 @@ import com.example.umkami.data.model.Review
 import com.example.umkami.viewmodel.AuthViewModel // Import AuthViewModel
 import com.example.umkami.viewmodel.CartViewModel
 import com.example.umkami.viewmodel.DetailViewModel
-import com.example.umkami.viewmodel.HomeViewModel // Import HomeViewModel
+import com.example.umkami.viewmodel.HomeViewModel
+import com.example.umkami.viewmodel.WishlistViewModel
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
@@ -52,18 +56,23 @@ fun DetailScreen(
     detailViewModel: DetailViewModel = viewModel(),
     cartViewModel: CartViewModel, // Inject CartViewModel
     authViewModel: AuthViewModel, // Inject AuthViewModel
-    homeViewModel: HomeViewModel // Inject HomeViewModel
+    homeViewModel: HomeViewModel, // Inject HomeViewModel
+    wishlistViewModel: WishlistViewModel = viewModel()
 ) {
     val uiState by detailViewModel.uiState.collectAsState()
     val umkm = uiState.umkm
     val context = LocalContext.current
     val cartItemCount by cartViewModel.cartItems.collectAsState()
     val currentUser by authViewModel.currentUser.collectAsState() // Collect current user
+    val isWishlisted by detailViewModel.isWishlisted.collectAsState()
 
     // Load data and record view when the screen is first composed
-    LaunchedEffect(umkmId) {
+    LaunchedEffect(umkmId, currentUser) {
         if (umkmId != null) {
             detailViewModel.loadUmkmDetails(umkmId)
+            currentUser?.uid?.let { userId ->
+                detailViewModel.checkIfWishlisted(userId, umkmId)
+            }
         }
     }
 
@@ -139,14 +148,39 @@ fun DetailScreen(
 
                     // Basic Info
                     item {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(umkm.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                            Text(umkm.category, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.secondary)
-                            Text(umkm.description, style = MaterialTheme.typography.bodyLarge)
-                            Text(umkm.address, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.weight(1f)) {
+                                Text(umkm.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                                Text(umkm.category, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.secondary)
+                                Text(umkm.description, style = MaterialTheme.typography.bodyLarge)
+                                Text(umkm.address, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            IconButton(onClick = {
+                                currentUser?.uid?.let { userId ->
+                                    umkmId?.let {
+                                        if (isWishlisted) {
+                                            detailViewModel.removeFromWishlist(userId, it)
+                                        } else {
+                                            detailViewModel.addToWishlist(userId, it)
+                                        }
+                                    }
+                                }
+                            }) {
+                                Icon(
+                                    imageVector = if (isWishlisted) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                    contentDescription = "Wishlist",
+                                    tint = if (isWishlisted) Color.Red else Color.Gray
+                                )
+                            }
+                        }
 
-                            // "Hubungi" button for service-based UMKMs
-                            if (umkm.category == "Jasa" && umkm.contact.isNotBlank()) {
+                        if (umkm.category.equals("Jasa", ignoreCase = true)) {
+                            if (umkm.contact.isNotBlank()) {
+                                Log.d("DetailScreen", "Displaying contact buttons for UMKM: ${umkm.name}, Category: ${umkm.category}, Contact: ${umkm.contact}")
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     text = "Contact: ${umkm.contact}",
@@ -154,16 +188,36 @@ fun DetailScreen(
                                     fontWeight = FontWeight.Medium
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
-                                Button(onClick = {
-                                    val intent = Intent(Intent.ACTION_DIAL).apply {
-                                        data = Uri.parse("tel:${umkm.contact}")
+                                Row {
+                                    Button(onClick = {
+                                        val intent = Intent(Intent.ACTION_DIAL).apply {
+                                            data = Uri.parse("tel:${umkm.contact}")
+                                        }
+                                        context.startActivity(intent)
+                                    }) {
+                                        Icon(Icons.Default.Call, contentDescription = "Hubungi UMKM")
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Hubungi")
                                     }
-                                    context.startActivity(intent)
-                                }) {
-                                    Icon(Icons.Default.Call, contentDescription = "Hubungi UMKM")
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Hubungi")
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Button(onClick = {
+                                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                                            data = Uri.parse("https://wa.me/${umkm.contact}")
+                                        }
+                                        context.startActivity(intent)
+                                    }) {
+                                        Icon(Icons.Default.Call, contentDescription = "Chat via WhatsApp")
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("WhatsApp")
+                                    }
                                 }
+                            } else {
+                                Log.d("DetailScreen", "NOT displaying contact buttons for UMKM: ${umkm.name}, Category: ${umkm.category}, Contact: ${umkm.contact}")
+                                Text(
+                                    text = "This is a service-based UMKM, but the contact number is not available.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.error
+                                )
                             }
                         }
                     }

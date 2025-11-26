@@ -10,8 +10,6 @@ import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -21,11 +19,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.umkami.data.model.Umkm
-import com.example.umkami.viewmodel.AuthViewModel // Import AuthViewModel
-import com.example.umkami.viewmodel.CartViewModel
+import com.example.umkami.viewmodel.AuthViewModel
 import com.example.umkami.viewmodel.HomeViewModel
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -34,90 +30,38 @@ import com.google.maps.android.compose.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    navController: NavController, // Add navController here
     onUmkmClick: (String) -> Unit,
-    onCartClick: () -> Unit,
-    homeVm: HomeViewModel = viewModel(), // Inject HomeViewModel
-    cartVm: CartViewModel = viewModel(), // Inject CartViewModel
-    authVm: AuthViewModel = viewModel() // Inject AuthViewModel
+    homeVm: HomeViewModel = viewModel(),
+    authVm: AuthViewModel = viewModel()
 ) {
-    // Mode tampilan: List atau Map
     var isMapMode by remember { mutableStateOf(false) }
 
-    // Collect states from ViewModel
     val filteredUmkmList by homeVm.filteredUmkmList.collectAsState()
     val searchQuery by homeVm.searchQuery.collectAsState()
     val selectedCategory by homeVm.selectedCategory.collectAsState()
     val allCategories by homeVm.categories.collectAsState()
-    val cartItemCount by cartVm.cartItems.collectAsState()
-    val recommendedUmkmList by homeVm.recommendedUmkmList.collectAsState() // Collect recommended list
-    val currentUser by authVm.currentUser.collectAsState() // Collect current user
+    val recommendedUmkmList by homeVm.recommendedUmkmList.collectAsState()
+    val currentUser by authVm.currentUser.collectAsState()
 
-    // Load recommendations when currentUser changes
     LaunchedEffect(currentUser) {
         val user = currentUser
         if (user != null) {
             homeVm.loadRecommendedUmkm(user.uid)
         } else {
-            homeVm.loadRecommendedUmkm("") // Load generic recommendations if no user is logged in
+            homeVm.loadRecommendedUmkm("")
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (isMapMode) "UMKami Map View" else "UMKami Listings") },
-                actions = {
-                    // Profile Icon
-                    IconButton(onClick = { navController.navigate("profile") }) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Profile"
-                        )
-                    }
-                    BadgedBox(
-                        badge = {
-                            if (cartItemCount.isNotEmpty()) {
-                                Badge { Text(cartItemCount.size.toString()) }
-                            }
-                        }
-                    ) {
-                        IconButton(onClick = onCartClick) {
-                            Icon(
-                                imageVector = Icons.Default.ShoppingCart,
-                                contentDescription = "Shopping Cart"
-                            )
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = { isMapMode = !isMapMode }) {
-                Icon(
-                    imageVector = if (isMapMode) Icons.AutoMirrored.Filled.List else Icons.Default.Map,
-                    contentDescription = null
-                )
-            }
-        }
-    ) { paddingValues ->
-
+    Box(modifier = Modifier.fillMaxSize()) {
         if (isMapMode) {
-            // ------------ MAP MODE ------------
-            // Use filteredUmkmList for markers in map mode
-            val malang = LatLng(-7.96, 112.63) // Default center
+            val malang = LatLng(-7.96, 112.63)
 
             val cameraPositionState = rememberCameraPositionState {
                 position = CameraPosition.fromLatLngZoom(malang, 12f)
             }
 
             GoogleMap(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
+                modifier = Modifier.fillMaxSize(),
                 cameraPositionState = cameraPositionState
             ) {
                 filteredUmkmList.forEach { umkm ->
@@ -134,13 +78,9 @@ fun HomeScreen(
                 }
             }
         } else {
-            // ------------ LIST MODE WITH FILTERS ------------
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
+                modifier = Modifier.fillMaxSize()
             ) {
-                // Search Bar
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { homeVm.setSearchQuery(it) },
@@ -152,7 +92,6 @@ fun HomeScreen(
                     singleLine = true
                 )
 
-                // Category Filter Chips
                 LazyRow(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -169,7 +108,6 @@ fun HomeScreen(
                     }
                 }
 
-                // Recommendations Section (NEW)
                 if (recommendedUmkmList.isNotEmpty()) {
                     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                         Text(
@@ -187,11 +125,10 @@ fun HomeScreen(
                     }
                 }
 
-                // UMKM List (filtered)
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f) // Fill remaining space
+                        .weight(1f)
                         .padding(horizontal = 16.dp),
                     contentPadding = PaddingValues(vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -202,7 +139,7 @@ fun HomeScreen(
                                 text = "No UMKM found for \"$searchQuery\"",
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                textAlign = TextAlign.Center
                             )
                         }
                     } else if (filteredUmkmList.isEmpty() && selectedCategory != "All") {
@@ -211,7 +148,7 @@ fun HomeScreen(
                                 text = "No UMKM found in category \"$selectedCategory\"",
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                textAlign = TextAlign.Center
                             )
                         }
                     } else if (filteredUmkmList.isEmpty()) {
@@ -220,7 +157,7 @@ fun HomeScreen(
                                 text = "No UMKM available.",
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                textAlign = TextAlign.Center
                             )
                         }
                     }
@@ -229,6 +166,18 @@ fun HomeScreen(
                     }
                 }
             }
+        }
+
+        FloatingActionButton(
+            onClick = { isMapMode = !isMapMode },
+            modifier = Modifier
+                .align(alignment = androidx.compose.ui.Alignment.BottomEnd)
+                .padding(16.dp)
+        ) {
+            Icon(
+                imageVector = if (isMapMode) Icons.AutoMirrored.Filled.List else Icons.Default.Map,
+                contentDescription = null
+            )
         }
     }
 }
@@ -241,7 +190,7 @@ fun UmkmItem(umkm: Umkm, onUmkmClick: (String) -> Unit) {
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh // Use surfaceContainerHigh for contrast
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -288,7 +237,7 @@ fun UmkmItem(umkm: Umkm, onUmkmClick: (String) -> Unit) {
 fun RecommendedUmkmItem(umkm: Umkm, onUmkmClick: (String) -> Unit) {
     Card(
         onClick = { onUmkmClick(umkm.id) },
-        modifier = Modifier.width(180.dp), // Fixed width for recommendations in LazyRow
+        modifier = Modifier.width(180.dp),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
