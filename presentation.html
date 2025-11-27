@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UMKami - Presentasi Proyek</title>
+    <style>
+        :root {
+            --font-family-display: Arial, sans-serif;
+            --font-weight-display: 600;
+            --font-family-content: Arial, sans-serif;
+            --font-weight-content: 400;
+            --font-size-content: 16px;
+            --line-height-content: 1.4;
+        }
+
+        body.theme-dark {
+            --color-bg-base: #0f172a;
+            --color-bg-elevated: #020617;
+            --color-bg-surface: #1e293b;
+            --color-bg-muted: #334155;
+            --color-text-primary: #f1f5f9;
+            --color-text-secondary: #cbd5e1;
+            --color-text-muted: #94a3b8;
+            --color-text-accent: #38bdf8;
+            --color-primary: #38bdf8;
+            --color-primary-foreground: #0f172a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family-content);
+            font-weight: var(--font-weight-content);
+            font-size: var(--font-size-content);
+            line-height: var(--line-height-content);
+            overflow-x: hidden;
+        }
+
+        .slide {
+            width: 960px;
+            height: 540px;
+            margin: 0 auto 20px;
+            display: flex;
+            flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .row { flex-direction: row; }
+        .col { flex-direction: column; }
+        .center {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .items-center { align-items: center; }
+        .fill-width { flex: 1; }
+        .fill-height { flex: 1; display: flex; flex-direction: column; }
+
+        .gap-lg { gap: 1.5rem; }
+        .gap-xl { gap: 2rem; }
+
+        .p-16 { padding: 4rem; }
+        .p-12 { padding: 3rem; }
+
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .mb-8 { margin-bottom: 2rem; }
+        .mb-12 { margin-bottom: 3rem; }
+
+        .mt-8 { margin-top: 2rem; }
+        .mt-12 { margin-top: 3rem; }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-family-display);
+            font-weight: var(--font-weight-display);
+            line-height: 1.2;
+            margin: 0;
+        }
+
+        h1 { font-size: 3rem; }
+        h2 { font-size: 2.25rem; }
+        h3 { font-size: 1.75rem; }
+        h4 { font-size: 1.5rem; }
+
+        .text-6xl { font-size: 3.75rem; }
+        .text-5xl { font-size: 3rem; }
+        .text-4xl { font-size: 2.25rem; }
+        .text-3xl { font-size: 1.875rem; }
+        .text-2xl { font-size: 1.5rem; }
+        .text-xl { font-size: 1.25rem; }
+        .text-base { font-size: 1rem; }
+        .text-sm { font-size: 0.875rem; }
+
+        .font-bold { font-weight: 700; }
+        .font-semibold { font-weight: 600; }
+
+        .text-center { text-align: center; }
+
+        ul, ol {
+            margin-left: 2rem;
+            line-height: 1.8;
+        }
+
+        ul li { list-style: disc; }
+        li { margin-bottom: 0.75rem; }
+        li:last-child { margin-bottom: 0; }
+
+        .card-rect {
+            padding: 2rem;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .opacity-90 { opacity: 0.9; }
+        .opacity-80 { opacity: 0.8; }
+    </style>
+</head>
+<body class="theme-dark">
+
+    <!-- SLIDE 1: COVER -->
+    <section class="slide p-16 col center" style="background-color: #020617; color: #f1f5f9;">
+        <div class="col center" style="flex-grow: 1; justify-content: center;">
+            <h1 class="text-6xl mb-4" style="color: #38bdf8;">UMKami</h1>
+            <p class="text-2xl mb-6" style="color: #cbd5e1;">Aplikasi Dukungan UMKM Lokal</p>
+            <img src="logo_umkami-removebg-preview.png" alt="Logo UMKami" style="height: 150px; border-radius: 24px;">
+        </div>
+        <div class="col center">
+            <p class="text-sm" style="color: #94a3b8;">Tim Hoshira:</p>
+            <p class="text-sm" style="color: #94a3b8;">
+                Joshua Washington Hutasoit (235150207111037)<br>
+                Nauval Rusdi Aslam (235150207111030)<br>
+                Fathur Ghani Sakha (235150207111025)
+            </p>
+            <p class="text-sm" style="margin-top: 1rem; color: #94a3b8;">28 November 2025</p>
+        </div>
+    </section>
+
+    <!-- SLIDE 2: LATAR BELAKANG -->
+    <section class="slide p-16 col" style="background-color: #0f172a; color: #f1f5f9;">
+        <h2 class="mb-6" style="color: #38bdf8;">Latar Belakang</h2>
+        <div class="fill-height">
+            <ul class="text-lg" style="color: #cbd5e1;">
+                <li><strong>Kontribusi Ekonomi Vital:</strong> UMKM menyumbang >60% PDB Indonesia (data Kemenkop UKM 2020), menjadikannya tulang punggung ekonomi nasional.</li>
+                <li><strong>Tantangan Digitalisasi:</strong> Banyak UMKM kesulitan dalam hal visibilitas online dan akses teknologi untuk pemasaran.</li>
+                <li><strong>Kesenjangan Informasi Konsumen:</strong> Masyarakat sulit menemukan UMKM lokal yang relevan dan berkualitas di sekitar mereka.</li>
+                <li><strong>Solusi UMKMami:</strong> Aplikasi direktori digital untuk memberdayakan UMKM lokal dan mempermudah akses konsumen kepada mereka.</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- SLIDE 3: PERSONA PENGGUNA (KONSUMEN) -->
+    <section class="slide p-16 col" style="background-color: #0f172a; color: #f1f5f9;">
+        <h2 class="mb-6" style="color: #38bdf8;">Persona Pengguna: Rani Pratama (Konsumen)</h2>
+        <div class="fill-height row gap-lg">
+            <div class="fill-width" style="background-color: #1e293b; color: #f1f5f9; padding: 2rem; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);">
+                <h3 class="text-xl mb-4" style="color: #38bdf8;">Profil</h3>
+                <p style="color: #cbd5e1;">
+                    <strong>Usia:</strong> 21 tahun<br>
+                    <strong>Pekerjaan:</strong> Mahasiswa aktif<br>
+                    <strong>Lokasi:</strong> Malang, Jawa Timur<br>
+                    <strong>Kebiasaan:</strong> Suka eksplor kuliner & mendukung lokal
+                </p>
+            </div>
+            <div class="fill-width" style="background-color: #1e293b; color: #f1f5f9; padding: 2rem; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);">
+                <h3 class="text-xl mb-4" style="color: #38bdf8;">Kebutuhan & Tantangan</h3>
+                <p style="color: #cbd5e1;">
+                    <strong>Tujuan:</strong> Mencari UMKM unik/terbaik (makanan/jasa) di dekatnya.<br>
+                    <strong>Tantangan:</strong> Informasi UMKM tersebar, sulit menemukan yang sesuai, butuh rekomendasi terpercaya.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 4: MASALAH & SOLUSI (RANI) -->
+    <section class="slide p-16 col center" style="background-color: #0f172a; color: #f1f5f9;">
+        <h2 class="mb-8" style="color: #38bdf8;">Masalah & Solusi Rani</h2>
+        <div class="fill-height row gap-xl items-center">
+            <div class="fill-width text-center">
+                <h3 class="text-2xl mb-4" style="color: #cbd5e1;">❌ Masalah Rani</h3>
+                <p class="text-lg" style="color: #cbd5e1;">Bingung mencari UMKM terdekat karena informasi online terlalu acak</p>
+            </div>
+            <div class="fill-width text-center">
+                <h3 class="text-2xl mb-4" style="color: #38bdf8;">✓ Solusi UMKami</h3>
+                <p class="text-lg" style="color: #38bdf8; font-weight: bold;">Peta interaktif + Rekomendasi personal</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 5: PERSONA PENGGUNA (PEMILIK UMKM) -->
+    <section class="slide p-16 col" style="background-color: #0f172a; color: #f1f5f9;">
+        <h2 class="mb-6" style="color: #38bdf8;">Persona Pengguna: Ibu Siti (Pemilik UMKM)</h2>
+        <div class="fill-height row gap-lg">
+            <div class="fill-width" style="background-color: #1e293b; color: #f1f5f9; padding: 2rem; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);">
+                <h3 class="text-xl mb-4" style="color: #38bdf8;">Profil</h3>
+                <p style="color: #cbd5e1;">
+                    <strong>Usia:</strong> 45 tahun<br>
+                    <strong>Pekerjaan:</strong> Pemilik Warung Bakso<br>
+                    <strong>Lokasi:</strong> Malang, Jawa Timur<br>
+                    <strong>Kebiasaan:</strong> Fokus pada kualitas produk, kurang familier dengan teknologi
+                </p>
+            </div>
+            <div class="fill-width" style="background-color: #1e293b; color: #f1f5f9; padding: 2rem; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);">
+                <h3 class="text-xl mb-4" style="color: #38bdf8;">Kebutuhan & Tantangan</h3>
+                <p style="color: #cbd5e1;">
+                    <strong>Tujuan:</strong> Meningkatkan visibilitas & jumlah pelanggan.<br>
+                    <strong>Tantangan:</strong> Sulit promosi online, tidak punya waktu/keahlian membuat profil digital yang menarik.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 6: FITUR UTAMA UMKami -->
+    <section class="slide p-16 col" style="background-color: #0f172a; color: #f1f5f9;">
+        <h2 class="mb-8" style="color: #38bdf8;">Fitur Utama UMKami</h2>
+        <div class="fill-height row gap-lg">
+            <div class="fill-width" style="background-color: #1e293b; color: #f1f5f9; padding: 1.5rem; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);">
+                <h4 class="text-lg mb-3" style="color: #38bdf8;">Peta Interaktif</h4>
+                <p style="color: #cbd5e1;">Tampilkan UMKM terdekat dengan lokasi pengguna secara real-time</p>
+            </div>
+            <div class="fill-width" style="background-color: #1e293b; color: #f1f5f9; padding: 1.5rem; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);">
+                <h4 class="text-lg mb-3" style="color: #38bdf8;">Filter Kategori</h4>
+                <p style="color: #cbd5e1;">Cari berdasarkan kategori (makanan, minuman, fashion, dll)</p>
+            </div>
+            <div class="fill-width" style="background-color: #1e293b; color: #f1f5f9; padding: 1.5rem; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);">
+                <h4 class="text-lg mb-3" style="color: #38bdf8;">Rating & Ulasan</h4>
+                <p style="color: #cbd5e1;">Baca ulasan & berikan rating untuk membantu UMKM berkembang</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 7: DEMO (ALUR KONSUMEN) -->
+    <section class="slide p-16 col" style="background-color: #0f172a; color: #f1f5f9;">
+        <h2 class="mb-6" style="color: #38bdf8;">Demo: Alur Pengguna (Konsumen)</h2>
+        <div class="fill-height col">
+            <ul class="text-base" style="color: #cbd5e1; list-style-type: none; margin-left: 0;">
+                <li class="mb-2">Melihat -> Rani membuka aplikasi & melihat UMKM terdekat/rekomendasi. (<strong>Data dari Firebase Realtime Database</strong>)</li>
+                <li class="mb-2">Mencari -> Rani mencari UMKM atau filter kategori.</li>
+                <li class="mb-2">Lokasi -> Rani beralih ke tampilan Peta. (<strong>Menggunakan Maps SDK for Android for Compose</strong>). Setiap UMKM direpresentasikan `Marker` dari Firebase.</li>
+                <li class="mb-2">Memilih -> Rani memilih UMKM & melihat halaman detail (menu, ulasan, lokasi). (<strong>Informasi dinamis dari Firebase</strong>)</li>
+                <li class="mb-2">Memesan -> Rani bisa memesan produk (jika makanan) atau melihat kontak.</li>
+            </ul>
+        </div>
+    </section>
+    
+    <!-- SLIDE 8: DEMO (ALUR PEMILIK UMKM) -->
+    <section class="slide p-16 col" style="background-color: #0f172a; color: #f1f5f9;">
+        <h2 class="mb-6" style="color: #38bdf8;">Demo: Alur Pemilik UMKM</h2>
+        <div class="fill-height col">
+            <ul class="text-base" style="color: #cbd5e1; list-style-type: none; margin-left: 0;">
+                <li class="mb-2">Login -> Ibu Siti login ke Owner Dashboard. (<strong>Otentikasi menggunakan Firebase Authentication</strong>).</li>
+                <li class="mb-2">Mengisi -> Mengisi profil bisnis: nama, deskripsi, foto, menu/layanan.</li>
+                <li class="mb-2">Menentukan -> Menentukan Lokasi: Ibu Siti mengetik alamat. (<strong>Sistem otomatis konversi alamat ke koordinat menggunakan `Geocoder` bawaan Android di *background thread* (Kotlin Coroutines). Ini metode aman & stabil.</strong>)</li>
+                <li class="mb-2">Menyimpan -> Data terupload ke Firebase Realtime Database. (<strong>Profil *live* di aplikasi berkat sifat *real-time* Firebase.</strong>)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- SLIDE 9: KESIMPULAN -->
+    <section class="slide p-16 col center" style="background-color: #020617; color: #f1f5f9;">
+        <h2 class="text-6xl" style="color: #38bdf8;">Terima Kasih</h2>
+    </section>
+
+</body>
+</html>
