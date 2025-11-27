@@ -1,0 +1,571 @@
+{
+  "orders": {
+    "-OejWYUzCl87p5jyMatd": {
+      "customerName": "Anonymous Customer",
+      "items": [
+        {
+          "item": {
+            "name": "Latte",
+            "price": 20000,
+            "umkmId": "umkm1"
+          },
+          "quantity": 1
+        },
+        {
+          "item": {
+            "name": "Cappuccino",
+            "price": 18000,
+            "umkmId": "umkm1"
+          },
+          "quantity": 1
+        },
+        {
+          "item": {
+            "name": "Kopi Hitam",
+            "price": 10000,
+            "umkmId": "umkm1"
+          },
+          "quantity": 1
+        }
+      ],
+      "orderTimestamp": 1763881400391,
+      "totalPrice": 48000,
+      "umkmId": "umkm1"
+    },
+    "-OejZozUFlA4Ys9wZn4F": {
+      "customerName": "Anonymous Customer",
+      "items": [
+        {
+          "item": {
+            "name": "Roti Bakar Coklat",
+            "price": 12000,
+            "umkmId": "umkm2"
+          },
+          "quantity": 6
+        }
+      ],
+      "orderTimestamp": 1763882258447,
+      "totalPrice": 72000,
+      "umkmId": "umkm2"
+    },
+    "-OejZyHFNgFBAdKeFLqq": {
+      "customerName": "Anonymous Customer",
+      "items": [
+        {
+          "item": {
+            "name": "Roti Bakar Coklat",
+            "price": 12000,
+            "umkmId": "umkm2"
+          },
+          "quantity": 4
+        },
+        {
+          "item": {
+            "name": "Ayam Geprek Original",
+            "price": 14000,
+            "umkmId": "umkm4"
+          },
+          "quantity": 2
+        }
+      ],
+      "orderTimestamp": 1763882296512,
+      "totalPrice": 76000,
+      "umkmId": "umkm2"
+    },
+    "-Oejlzoye3BP608pdGBJ": {
+      "customerName": "Anonymous Customer",
+      "items": [
+        {
+          "item": {
+            "name": "Roti Bakar Keju",
+            "price": 15000,
+            "umkmId": "umkm2"
+          },
+          "quantity": 3
+        }
+      ],
+      "orderTimestamp": 1763885710633,
+      "totalPrice": 45000,
+      "umkmId": "umkm2"
+    },
+    "-OejuN9EcQ7Xo6iWRHVt": {
+      "customerName": "Anonymous Customer",
+      "items": [
+        {
+          "item": {
+            "name": "Latte",
+            "price": 20000,
+            "umkmId": "umkm1"
+          },
+          "quantity": 4,
+          "umkmId": "umkm1",
+          "umkmName": "Kedai Kopi Sore"
+        }
+      ],
+      "orderTimestamp": 1763887907411,
+      "totalPrice": 80000,
+      "umkmId": "umkm1",
+      "userId": "vPi5S4AfjCgbNDZe6eEn7bN3Nwg2"
+    },
+    "-Oek1FQhbdWJFa17TMmo": {
+      "customerName": "Anonymous Customer",
+      "items": [
+        {
+          "item": {
+            "name": "Es Teh Original",
+            "price": 5000,
+            "umkmId": "umkm8"
+          },
+          "quantity": 2,
+          "umkmId": "umkm8",
+          "umkmName": "Es Teh Jumbo 5K"
+        }
+      ],
+      "orderTimestamp": 1763889972879,
+      "totalPrice": 10000,
+      "umkmId": "umkm8",
+      "userId": "vPi5S4AfjCgbNDZe6eEn7bN3Nwg2"
+    },
+    "-Oek4_inpJ_S9kk6lb7V": {
+      "customerName": "Anonymous Customer",
+      "items": [
+        {
+          "item": {
+            "name": "Ayam Geprek Level 5",
+            "price": 16000,
+            "umkmId": "umkm4"
+          },
+          "quantity": 2,
+          "umkmId": "umkm4",
+          "umkmName": "Ayam Geprek Pak D"
+        }
+      ],
+      "orderTimestamp": 1763890846535,
+      "totalPrice": 32000,
+      "umkmId": "umkm4",
+      "userId": "vPi5S4AfjCgbNDZe6eEn7bN3Nwg2"
+    },
+    "-OezMSQ6XWwcYVfjgJGV": {
+      "customerName": "Anonymous Customer",
+      "items": [
+        {
+          "item": {
+            "name": "Bakso Urat",
+            "price": 15000,
+            "umkmId": "umkm0"
+          },
+          "quantity": 1,
+          "umkmId": "umkm0",
+          "umkmName": "Warung Bakso Mantep"
+        },
+        {
+          "item": {
+            "name": "Bakso Halus",
+            "price": 12000,
+            "umkmId": "umkm0"
+          },
+          "quantity": 1,
+          "umkmId": "umkm0",
+          "umkmName": "Warung Bakso Mantep"
+        },
+        {
+          "item": {
+            "name": "Mie Bakso",
+            "price": 13000,
+            "umkmId": "umkm0"
+          },
+          "quantity": 1,
+          "umkmId": "umkm0",
+          "umkmName": "Warung Bakso Mantep"
+        }
+      ],
+      "orderTimestamp": 1764147189568,
+      "totalPrice": 40000,
+      "umkmId": "umkm0",
+      "userId": "vPi5S4AfjCgbNDZe6eEn7bN3Nwg2"
+    },
+    "-OezRi9K0zfzRI4LTSQT": {
+      "customerName": "Anonymous Customer",
+      "items": [
+        {
+          "item": {
+            "name": "Es Teh Lemon",
+            "price": 7000,
+            "umkmId": "umkm8"
+          },
+          "quantity": 3,
+          "umkmId": "umkm8",
+          "umkmName": "Es Teh Jumbo 5K"
+        },
+        {
+          "item": {
+            "name": "Es Teh Lychee",
+            "price": 8000,
+            "umkmId": "umkm8"
+          },
+          "quantity": 2,
+          "umkmId": "umkm8",
+          "umkmName": "Es Teh Jumbo 5K"
+        }
+      ],
+      "orderTimestamp": 1764148568857,
+      "totalPrice": 37000,
+      "umkmId": "umkm8",
+      "userId": "vPi5S4AfjCgbNDZe6eEn7bN3Nwg2"
+    },
+    "-Of4mUIZxpR8sGVvLgdG": {
+      "customerName": "Anonymous Customer",
+      "items": [
+        {
+          "item": {
+            "name": "Bakso Urat",
+            "price": 15000,
+            "umkmId": "umkm0"
+          },
+          "quantity": 1,
+          "umkmId": "umkm0",
+          "umkmName": "Warung Bakso Mantep"
+        }
+      ],
+      "orderTimestamp": 1764254938754,
+      "totalPrice": 15000,
+      "umkmId": "umkm0",
+      "userId": "i2AJH8TxAweYQ56uXn4KwdQ1fO73"
+    },
+    "-Of4mXRrowXQ1zEL9wQq": {
+      "customerName": "Anonymous Customer",
+      "items": [
+        {
+          "item": {
+            "name": "Bakso Urat",
+            "price": 15000,
+            "umkmId": "umkm0"
+          },
+          "quantity": 1,
+          "umkmId": "umkm0",
+          "umkmName": "Warung Bakso Mantep"
+        }
+      ],
+      "orderTimestamp": 1764254951621,
+      "totalPrice": 15000,
+      "umkmId": "umkm0",
+      "userId": "i2AJH8TxAweYQ56uXn4KwdQ1fO73"
+    },
+    "-Of4mZP-XLVreK2D1-dX": {
+      "customerName": "Anonymous Customer",
+      "items": [
+        {
+          "item": {
+            "name": "Bakso Urat",
+            "price": 15000,
+            "umkmId": "umkm0"
+          },
+          "quantity": 1,
+          "umkmId": "umkm0",
+          "umkmName": "Warung Bakso Mantep"
+        }
+      ],
+      "orderTimestamp": 1764254959630,
+      "totalPrice": 15000,
+      "umkmId": "umkm0",
+      "userId": "i2AJH8TxAweYQ56uXn4KwdQ1fO73"
+    }
+  },
+  "reviews": {
+    "umkm0": {
+      "r1": "Warung Bakso Mantep mantap, kualitas sangat bagus.",
+      "r2": "Pelayanan di Warung Bakso Mantep cepat dan ramah.",
+      "r3": "Harga terjangkau, Warung Bakso Mantep recommended."
+    },
+    "umkm1": {
+      "-OezNO_8biU-oNzhj8_L": {
+        "author": "abc\tabc\ta",
+        "comment": "aiosdjfoasidfasdf",
+        "rating": 4
+      },
+      "r1": "Kedai Kopi Sore mantap, kualitas sangat bagus.",
+      "r2": "Pelayanan di Kedai Kopi Sore cepat dan ramah.",
+      "r3": "Harga terjangkau, Kedai Kopi Sore recommended."
+    },
+    "umkm2": {
+      "r1": "Roti Bakar 88 mantap, kualitas sangat bagus.",
+      "r2": "Pelayanan di Roti Bakar 88 cepat dan ramah.",
+      "r3": "Harga terjangkau, Roti Bakar 88 recommended."
+    },
+    "umkm3": {
+      "r1": "Laundry Kilat Express mantap, kualitas sangat bagus.",
+      "r2": "Pelayanan di Laundry Kilat Express cepat dan ramah.",
+      "r3": "Harga terjangkau, Laundry Kilat Express recommended."
+    },
+    "umkm4": {
+      "r1": "Ayam Geprek Pak D mantap, kualitas sangat bagus.",
+      "r2": "Pelayanan di Ayam Geprek Pak D cepat dan ramah.",
+      "r3": "Harga terjangkau, Ayam Geprek Pak D recommended."
+    },
+    "umkm6": {
+      "-Oek5F0frzR92kaZrFOY": {
+        "author": "sdfsdfasdf123123123asd",
+        "comment": "dfasdfaasdfasdfasdfasdfasdf",
+        "rating": 5
+      },
+      "r1": "Sate Ayu mantap, kualitas sangat bagus.",
+      "r2": "Pelayanan di Sate Ayu cepat dan ramah.",
+      "r3": "Harga terjangkau, Sate Ayu recommended."
+    },
+    "umkm7": {
+      "r1": "Foto Copy Murah Jaya mantap, kualitas sangat bagus.",
+      "r2": "Pelayanan di Foto Copy Murah Jaya cepat dan ramah.",
+      "r3": "Harga terjangkau, Foto Copy Murah Jaya recommended."
+    },
+    "umkm8": {
+      "r1": "Es Teh Jumbo 5K mantap, kualitas sangat bagus.",
+      "r2": "Pelayanan di Es Teh Jumbo 5K cepat dan ramah.",
+      "r3": "Harga terjangkau, Es Teh Jumbo 5K recommended."
+    }
+  },
+  "umkm": {
+    "umkm0": {
+      "address": "Jl. Veteran, Lowokwaru, Malang",
+      "category": "Makanan",
+      "description": "Bakso enak dekat kampus UB, terkenal dengan kuah gurih dan bakso uratnya.",
+      "id": "umkm0",
+      "imageUrl": "https://github.com/G4l1le30/project/blob/master/assets/images/umkm0/Bakso_mi_bihun.jpg?raw=true",
+      "lat": -7.956,
+      "lng": 112.615,
+      "name": "Warung Bakso Mantep"
+    },
+    "umkm1": {
+      "address": "Jl. Sigura-gura, Malang",
+      "category": "Minuman",
+      "description": "Kedai kopi lokal dengan suasana tenang, cocok untuk nugas dan nongkrong.",
+      "id": "umkm1",
+      "imageUrl": "https://github.com/G4l1le30/project/blob/master/assets/images/umkm1/A_small_cup_of_coffee.JPG?raw=true",
+      "lat": -7.957,
+      "lng": 112.612,
+      "name": "Kedai Kopi Sore"
+    },
+    "umkm2": {
+      "address": "Jl. Soekarno-Hatta, Malang",
+      "category": "Makanan",
+      "description": "Roti bakar legendaris dengan topping melimpah dan harga terjangkau.",
+      "id": "umkm2",
+      "imageUrl": "https://github.com/G4l1le30/project/blob/master/assets/images/umkm2/Resep-Bolu-Bakar-Bandung-Sederhana-Lezat-Teksturnya-Empuk-Banget.jpg?raw=true",
+      "lat": -7.951,
+      "lng": 112.626,
+      "name": "Roti Bakar 88"
+    },
+    "umkm3": {
+      "address": "Jl. MT Haryono, Malang",
+      "category": "Jasa",
+      "contact": "081234567890",
+      "description": "Layanan laundry cepat 4 jam selesai dengan harga mahasiswa.",
+      "id": "umkm3",
+      "imageUrl": "https://github.com/G4l1le30/project/blob/master/assets/images/umkm3/laundry.jpg?raw=true",
+      "lat": -7.952,
+      "lng": 112.621,
+      "name": "Laundry Kilat Express",
+      "whatsapp": "+6281234567890"
+    },
+    "umkm4": {
+      "address": "Jl. Kerto Leksono, Malang",
+      "category": "Makanan",
+      "description": "Ayam geprek dengan level sambal bervariasi, favorit mahasiswa UB.",
+      "id": "umkm4",
+      "imageUrl": "https://github.com/G4l1le30/project/blob/master/assets/images/umkm4/ayam%20geprek.png?raw=true",
+      "lat": -7.958,
+      "lng": 112.618,
+      "name": "Ayam Geprek Pak D"
+    },
+    "umkm6": {
+      "address": "Jl. Jakarta, Malang",
+      "category": "Makanan",
+      "description": "Sate ayam bumbu khas Madura dengan harga mahasiswa.",
+      "id": "umkm6",
+      "imageUrl": "https://github.com/G4l1le30/project/blob/master/assets/images/umkm6/sate.png?raw=true",
+      "lat": -7.964,
+      "lng": 112.633,
+      "name": "Sate Ayu"
+    },
+    "umkm7": {
+      "address": "Jl. Mayjen Panjaitan, Malang",
+      "category": "Jasa",
+      "contact": "089876543210",
+      "description": "Fotocopy dan print murah, dekat kampus dan buka sampai malam.",
+      "id": "umkm7",
+      "imageUrl": "https://github.com/G4l1le30/project/blob/master/assets/images/umkm7/umkm7.png?raw=true",
+      "lat": -7.953,
+      "lng": 112.62,
+      "name": "Foto Copy Murah Jaya",
+      "whatsapp": "+6289876543210"
+    },
+    "umkm8": {
+      "address": "Jl. Kalpataru, Malang",
+      "category": "Minuman",
+      "description": "Es teh jumbo berbagai rasa, harga ramah kantong mahasiswa.",
+      "id": "umkm8",
+      "imageUrl": "https://github.com/G4l1le30/project/blob/master/assets/images/umkm8/umkm8.jpeg?raw=true",
+      "lat": -7.949,
+      "lng": 112.619,
+      "name": "Es Teh Jumbo 5K"
+    }
+  },
+  "umkm_menu": {
+    "umkm0": [
+      {
+        "name": "Bakso Urat",
+        "price": 15000
+      },
+      {
+        "name": "Bakso Halus",
+        "price": 12000
+      },
+      {
+        "name": "Mie Bakso",
+        "price": 13000
+      }
+    ],
+    "umkm1": [
+      {
+        "name": "Kopi Hitam",
+        "price": 10000
+      },
+      {
+        "name": "Cappuccino",
+        "price": 18000
+      },
+      {
+        "name": "Latte",
+        "price": 20000
+      }
+    ],
+    "umkm2": [
+      {
+        "name": "Roti Bakar Coklat",
+        "price": 12000
+      },
+      {
+        "name": "Roti Bakar Keju",
+        "price": 15000
+      },
+      {
+        "name": "Roti Bakar Mix",
+        "price": 17000
+      }
+    ],
+    "umkm4": [
+      {
+        "name": "Ayam Geprek Original",
+        "price": 14000
+      },
+      {
+        "name": "Ayam Geprek Keju",
+        "price": 17000
+      },
+      {
+        "name": "Ayam Geprek Level 5",
+        "price": 16000
+      }
+    ],
+    "umkm6": [
+      {
+        "name": "Sate Ayam",
+        "price": 15000
+      },
+      {
+        "name": "Sate Kulit",
+        "price": 12000
+      },
+      {
+        "name": "Lontong Sate",
+        "price": 18000
+      }
+    ],
+    "umkm8": [
+      {
+        "name": "Es Teh Original",
+        "price": 5000
+      },
+      {
+        "name": "Es Teh Lemon",
+        "price": 7000
+      },
+      {
+        "name": "Es Teh Lychee",
+        "price": 8000
+      }
+    ]
+  },
+  "umkm_services": {
+    "umkm3": [
+      {
+        "price": 7000,
+        "service": "Laundry Reguler"
+      },
+      {
+        "price": 15000,
+        "service": "Laundry Kilat 4 Jam"
+      },
+      {
+        "price": 10000,
+        "service": "Cuci Kering Setrika"
+      }
+    ],
+    "umkm7": [
+      {
+        "price": 200,
+        "service": "Fotocopy"
+      },
+      {
+        "price": 500,
+        "service": "Print Hitam Putih"
+      },
+      {
+        "price": 1500,
+        "service": "Print Warna"
+      },
+      {
+        "price": 6000,
+        "service": "Jilid Spiral"
+      }
+    ]
+  },
+  "user_preferences": {
+    "vPi5S4AfjCgbNDZe6eEn7bN3Nwg2": {
+      "viewed_categories": {
+        "Jasa": {
+          "count": 17,
+          "last_viewed": 1764274867256
+        },
+        "Makanan": {
+          "count": 11,
+          "last_viewed": 1764274878496
+        },
+        "Minuman": {
+          "count": 8,
+          "last_viewed": 1764180445507
+        }
+      }
+    }
+  },
+  "users": {
+    "i2AJH8TxAweYQ56uXn4KwdQ1fO73": {
+      "address": "",
+      "displayName": "joko",
+      "email": "joko@gmail.com",
+      "role": "customer",
+      "uid": "i2AJH8TxAweYQ56uXn4KwdQ1fO73"
+    },
+    "vPi5S4AfjCgbNDZe6eEn7bN3Nwg2": {
+      "address": "Jl. Raya Penggilingan, Jakarta Timur",
+      "displayName": "joshua",
+      "email": "joshua@gmail.com",
+      "uid": "vPi5S4AfjCgbNDZe6eEn7bN3Nwg2"
+    }
+  },
+  "wishlist": {
+    "vPi5S4AfjCgbNDZe6eEn7bN3Nwg2": {
+      "-Of1wpyvaWbKBqbbplL1": true,
+      "umkm7": true
+    }
+  }
+}

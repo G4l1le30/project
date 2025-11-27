@@ -8,7 +8,9 @@ import com.example.umkami.data.model.Review
 import com.example.umkami.data.model.ServiceItem
 import com.google.firebase.database.*
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.tasks.await
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 class UmkmRepository {
 
@@ -17,10 +19,12 @@ class UmkmRepository {
 
     // Child references
     private val dbUmkm = dbRoot.child("umkm")
+    private val dbUsers = dbRoot.child("users")
     private val dbMenu = dbRoot.child("umkm_menu")
     private val dbService = dbRoot.child("umkm_services")
     private val dbReviews = dbRoot.child("reviews")
     private val dbOrders = dbRoot.child("orders")
+    private val dbCarts = dbRoot.child("carts")
     private val dbWishlist = dbRoot.child("wishlist")
 
     // ============================================================
@@ -117,30 +121,19 @@ class UmkmRepository {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val reviewList = mutableListOf<Review>()
                 snapshot.children.forEach { child ->
-                    // Coba mapping ke objek Review dulu
-                    val review = try {
-                        child.getValue(Review::class.java)
-                    } catch (e: Exception) {
-                        null
-                    }
-
+                    val review = try { child.getValue(Review::class.java) } catch (e: Exception) { null }
                     if (review != null) {
                         reviewList.add(review)
                     } else {
-                        // Jika gagal, coba mapping sebagai String (untuk data lama)
                         val oldReview = child.getValue(String::class.java)
                         if (oldReview != null) {
-                            // Konversi data lama ke format baru
                             reviewList.add(Review(author = "Anonymous", comment = oldReview, rating = 3.0f))
                         }
                     }
                 }
-
                 if (continuation.isActive) continuation.resume(reviewList)
             }
-
             override fun onCancelled(error: DatabaseError) {
-                Log.e("UmkmRepository", "Error getting reviews: ${error.message}")
                 if (continuation.isActive) continuation.resume(emptyList())
             }
         })
@@ -151,30 +144,59 @@ class UmkmRepository {
     // ============================================================
     suspend fun addReview(umkmId: String, review: Review): Boolean = suspendCancellableCoroutine { continuation ->
         dbReviews.child(umkmId).push().setValue(review)
-            .addOnSuccessListener {
-                if (continuation.isActive) continuation.resume(true)
-            }
-            .addOnFailureListener {
-                if (continuation.isActive) continuation.resume(false)
-            }
+            .addOnSuccessListener { if (continuation.isActive) continuation.resume(true) }
+            .addOnFailureListener { if (continuation.isActive) continuation.resume(false) }
     }
 
+    // ============================================================
+    // 7. Tambah Order Baru (dengan Pengecekan Saldo)
+    // ============================================================
+    suspend fun placeOrderWithBalanceCheck(order: Order): Result<Unit> = suspendCancellableCoroutine { continuation ->
+        val userBalanceRef = dbUsers.child(order.userId).child("balance")
 
-    // ============================================================
-    // 7. Tambah Order Baru
-    // ============================================================
-    suspend fun placeOrder(order: Order): Boolean = suspendCancellableCoroutine { continuation ->
-        dbOrders.push().setValue(order)
-            .addOnSuccessListener {
-                if (continuation.isActive) continuation.resume(true)
+        userBalanceRef.runTransaction(object : Transaction.Handler {
+            override fun doTransaction(mutableData: MutableData): Transaction.Result {
+                val currentBalance = mutableData.getValue(Double::class.java) ?: 0.0
+                if (currentBalance < order.totalPrice) {
+                    return Transaction.abort()
+                }
+                val newBalance = currentBalance - order.totalPrice
+                mutableData.value = newBalance
+                return Transaction.success(mutableData)
             }
-            .addOnFailureListener {
-                Log.e("UmkmRepository", "Failed to place order: ${it.message}")
-                if (continuation.isActive) continuation.resume(false)
+
+            override fun onComplete(
+                databaseError: DatabaseError?,
+                committed: Boolean,
+                dataSnapshot: DataSnapshot?
+            ) {
+                if (databaseError != null) {
+                    if (continuation.isActive) continuation.resumeWithException(databaseError.toException())
+                    return
+                }
+
+                if (committed) {
+                    val newOrderRef = dbOrders.push()
+                    newOrderRef.setValue(order).addOnCompleteListener { orderTask ->
+                        if (orderTask.isSuccessful) {
+                            dbCarts.child(order.userId).removeValue().addOnCompleteListener { cartTask ->
+                                if (cartTask.isSuccessful) {
+                                    if (continuation.isActive) continuation.resume(Result.success(Unit))
+                                } else {
+                                    if (continuation.isActive) continuation.resume(Result.failure(cartTask.exception ?: Exception("Gagal menghapus keranjang.")))
+                                }
+                            }
+                        } else {
+                            if (continuation.isActive) continuation.resume(Result.failure(orderTask.exception ?: Exception("Gagal membuat pesanan.")))
+                        }
+                    }
+                } else {
+                    if (continuation.isActive) continuation.resume(Result.failure(Exception("Saldo tidak cukup.")))
+                }
             }
+        })
     }
-
-
+    
     // ============================================================
     // 8. Get Orders by User ID
     // ============================================================
@@ -182,12 +204,10 @@ class UmkmRepository {
         dbOrders.orderByChild("userId").equalTo(userId).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val orderList = snapshot.children.mapNotNull { it.getValue(Order::class.java) }
-                // Sort by most recent first
                 if (continuation.isActive) continuation.resume(orderList.sortedByDescending { it.orderTimestamp })
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("UmkmRepository", "Error getting orders by user ID: ${error.message}")
                 if (continuation.isActive) continuation.resume(emptyList())
             }
         })
@@ -204,19 +224,43 @@ class UmkmRepository {
 
         dbUmkm.child(umkmId).setValue(umkmToSave)
             .addOnSuccessListener {
-                dbRoot.child("users").child(userId).child("umkmId").setValue(umkmId)
-                    .addOnSuccessListener {
-                        if (continuation.isActive) continuation.resume(umkmId)
-                    }
-                    .addOnFailureListener { e ->
-                        Log.e("UmkmRepository", "Failed to update user's umkmId: ${e.message}")
-                        if (continuation.isActive) continuation.resume(umkmId) // Still resume, but log error
-                    }
+                dbUsers.child(userId).child("umkmId").setValue(umkmId)
+                    .addOnSuccessListener { if (continuation.isActive) continuation.resume(umkmId) }
+                    .addOnFailureListener { e -> if (continuation.isActive) continuation.resume(umkmId) }
             }
-            .addOnFailureListener { e ->
-                Log.e("UmkmRepository", "Failed to save UMKM: ${e.message}")
-                if (continuation.isActive) continuation.resume("")
+            .addOnFailureListener { e -> if (continuation.isActive) continuation.resume("") }
+    }
+
+    suspend fun topUpBalance(userId: String, amount: Double): Result<Unit> = suspendCancellableCoroutine { continuation ->
+        if (userId.isBlank() || amount <= 0) {
+            if (continuation.isActive) continuation.resume(Result.failure(IllegalArgumentException("User ID tidak valid atau jumlah top-up tidak positif.")))
+            return@suspendCancellableCoroutine
+        }
+
+        val userBalanceRef = dbUsers.child(userId).child("balance")
+
+        userBalanceRef.runTransaction(object : Transaction.Handler {
+            override fun doTransaction(mutableData: MutableData): Transaction.Result {
+                val currentBalance = mutableData.getValue(Double::class.java) ?: 0.0
+                val newBalance = currentBalance + amount
+                mutableData.value = newBalance
+                return Transaction.success(mutableData)
             }
+
+            override fun onComplete(
+                databaseError: DatabaseError?,
+                committed: Boolean,
+                dataSnapshot: DataSnapshot?
+            ) {
+                if (databaseError != null) {
+                    if (continuation.isActive) continuation.resume(Result.failure(databaseError.toException()))
+                } else if (committed) {
+                    if (continuation.isActive) continuation.resume(Result.success(Unit))
+                } else {
+                    if (continuation.isActive) continuation.resume(Result.failure(Exception("Transaksi top-up gagal, tidak di-commit.")))
+                }
+            }
+        })
     }
 
     // ============================================================
@@ -224,22 +268,14 @@ class UmkmRepository {
     // ============================================================
     suspend fun addToWishlist(userId: String, umkmId: String): Boolean = suspendCancellableCoroutine { continuation ->
         dbWishlist.child(userId).child(umkmId).setValue(true)
-            .addOnSuccessListener {
-                if (continuation.isActive) continuation.resume(true)
-            }
-            .addOnFailureListener {
-                if (continuation.isActive) continuation.resume(false)
-            }
+            .addOnSuccessListener { if (continuation.isActive) continuation.resume(true) }
+            .addOnFailureListener { if (continuation.isActive) continuation.resume(false) }
     }
 
     suspend fun removeFromWishlist(userId: String, umkmId: String): Boolean = suspendCancellableCoroutine { continuation ->
         dbWishlist.child(userId).child(umkmId).removeValue()
-            .addOnSuccessListener {
-                if (continuation.isActive) continuation.resume(true)
-            }
-            .addOnFailureListener {
-                if (continuation.isActive) continuation.resume(false)
-            }
+            .addOnSuccessListener { if (continuation.isActive) continuation.resume(true) }
+            .addOnFailureListener { if (continuation.isActive) continuation.resume(false) }
     }
 
     suspend fun getWishlist(userId: String): List<String> = suspendCancellableCoroutine { continuation ->
@@ -248,75 +284,26 @@ class UmkmRepository {
                 val wishlist = snapshot.children.mapNotNull { it.key }
                 if (continuation.isActive) continuation.resume(wishlist)
             }
-
-            override fun onCancelled(error: DatabaseError) {
-                if (continuation.isActive) continuation.resume(emptyList())
-            }
+            override fun onCancelled(error: DatabaseError) { if (continuation.isActive) continuation.resume(emptyList()) }
         })
     }
 
     suspend fun isWishlisted(userId: String, umkmId: String): Boolean = suspendCancellableCoroutine { continuation ->
         dbWishlist.child(userId).child(umkmId).addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if (continuation.isActive) continuation.resume(snapshot.exists())
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                if (continuation.isActive) continuation.resume(false)
-            }
+            override fun onDataChange(snapshot: DataSnapshot) { if (continuation.isActive) continuation.resume(snapshot.exists()) }
+            override fun onCancelled(error: DatabaseError) { if (continuation.isActive) continuation.resume(false) }
         })
     }
 
-
     suspend fun saveMenu(umkmId: String, menu: List<MenuItem>): Boolean = suspendCancellableCoroutine { continuation ->
         dbMenu.child(umkmId).setValue(menu)
-            .addOnSuccessListener {
-                if (continuation.isActive) continuation.resume(true)
-            }
-            .addOnFailureListener {
-                if (continuation.isActive) continuation.resume(false)
-            }
+            .addOnSuccessListener { if (continuation.isActive) continuation.resume(true) }
+            .addOnFailureListener { if (continuation.isActive) continuation.resume(false) }
     }
 
     suspend fun saveServices(umkmId: String, services: List<ServiceItem>): Boolean = suspendCancellableCoroutine { continuation ->
         dbService.child(umkmId).setValue(services)
-            .addOnSuccessListener {
-                if (continuation.isActive) continuation.resume(true)
-            }
-            .addOnFailureListener {
-                if (continuation.isActive) continuation.resume(false)
-            }
-    }
-
-    // ============================================================
-    // ALTERNATIF: Callback (Kalau Compose kamu butuh callback)
-    // ============================================================
-    fun getReviewsByUmkmIdCallback(umkmId: String, onResult: (List<Review>) -> Unit) {
-        dbReviews.child(umkmId).addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val reviewList = mutableListOf<Review>()
-                snapshot.children.forEach { child ->
-                    val review = try {
-                        child.getValue(Review::class.java)
-                    } catch (e: Exception) {
-                        null
-                    }
-
-                    if (review != null) {
-                        reviewList.add(review)
-                    } else {
-                        val oldReview = child.getValue(String::class.java)
-                        if (oldReview != null) {
-                            reviewList.add(Review(author = "Anonymous", comment = oldReview, rating = 3.0f))
-                        }
-                    }
-                }
-                onResult(reviewList)
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                onResult(emptyList())
-            }
-        })
+            .addOnSuccessListener { if (continuation.isActive) continuation.resume(true) }
+            .addOnFailureListener { if (continuation.isActive) continuation.resume(false) }
     }
 }

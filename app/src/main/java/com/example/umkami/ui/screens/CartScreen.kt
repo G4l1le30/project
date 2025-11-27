@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -22,6 +23,7 @@ import com.example.umkami.data.model.CartItem
 import com.example.umkami.viewmodel.AuthViewModel
 import com.example.umkami.viewmodel.CartViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CartScreen(
     cartViewModel: CartViewModel,
@@ -33,14 +35,75 @@ fun CartScreen(
     val currentUser by authViewModel.currentUser.collectAsState()
     val context = LocalContext.current
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    // Collect new states from CartViewModel
+    val isPlacingOrder by cartViewModel.isPlacingOrder.collectAsState()
+    val checkoutError by cartViewModel.checkoutError.collectAsState()
+    val checkoutSuccess by cartViewModel.checkoutSuccess.collectAsState()
+
+    // Side-effect for showing errors
+    LaunchedEffect(checkoutError) {
+        checkoutError?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            cartViewModel.clearError()
+        }
+    }
+
+    // Side-effect for handling successful checkout
+    LaunchedEffect(checkoutSuccess) {
+        if (checkoutSuccess) {
+            Toast.makeText(context, "Pesanan berhasil dibuat!", Toast.LENGTH_SHORT).show()
+            navController.popBackStack()
+            cartViewModel.clearCheckoutSuccess()
+        }
+    }
+
+    Scaffold(
+        bottomBar = {
+            if (groupedCartItems.isNotEmpty()) {
+                BottomAppBar(
+                    modifier = Modifier.fillMaxWidth(),
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Total: Rp ${"%,.0f".format(totalPrice)}",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Button(
+                            onClick = {
+                                currentUser?.let { user ->
+                                    cartViewModel.placeOrder(user)
+                                } ?: Toast.makeText(context, "Anda harus login untuk memesan.", Toast.LENGTH_SHORT).show()
+                            },
+                            enabled = groupedCartItems.isNotEmpty() && !isPlacingOrder
+                        ) {
+                            if (isPlacingOrder) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                            } else {
+                                Text("Place Order")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ) { paddingValues ->
         if (groupedCartItems.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Your cart is empty.",
+                    text = "Keranjang Anda kosong.",
                     style = MaterialTheme.typography.headlineSmall,
                     textAlign = TextAlign.Center
                 )
@@ -49,6 +112,7 @@ fun CartScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(paddingValues)
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(vertical = 16.dp)
@@ -68,46 +132,6 @@ fun CartScreen(
                             onAddItem = { cartViewModel.addItem(cartItem.item, cartItem.umkmName) },
                             onRemoveItem = { cartViewModel.removeItem(cartItem.item, cartItem.umkmName) }
                         )
-                    }
-                }
-            }
-        }
-
-        if (groupedCartItems.isNotEmpty()) {
-            BottomAppBar(
-                modifier = Modifier.align(Alignment.BottomCenter),
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Total: Rp ${"%,.0f".format(totalPrice)}",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Button(
-                        onClick = {
-                            val uid = currentUser?.uid
-                            if (uid != null) {
-                                cartViewModel.placeOrder(uid) { success ->
-                                    if (success) {
-                                        Toast.makeText(context, "Order placed successfully!", Toast.LENGTH_SHORT).show()
-                                        navController.popBackStack()
-                                    } else {
-                                        Toast.makeText(context, "Failed to place order.", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                            } else {
-                                Toast.makeText(context, "You must be logged in to place an order.", Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        enabled = groupedCartItems.isNotEmpty()
-                    ) {
-                        Text("Place Order")
                     }
                 }
             }

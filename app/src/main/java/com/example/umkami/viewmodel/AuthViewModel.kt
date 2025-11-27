@@ -3,6 +3,7 @@ package com.example.umkami.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.umkami.data.model.User
+import com.example.umkami.data.repository.UmkmRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.FirebaseDatabase
@@ -19,6 +20,7 @@ class AuthViewModel : ViewModel() {
     private val auth: FirebaseAuth = Firebase.auth
     private val database: FirebaseDatabase = Firebase.database
     private val usersRef = database.getReference("users")
+    private val repository = UmkmRepository() // Added repository
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -56,12 +58,37 @@ class AuthViewModel : ViewModel() {
         auth.removeAuthStateListener(authStateListener)
     }
 
+    fun topUpBalance(amount: Double) {
+        val user = _currentUser.value
+        if (user == null) {
+            _error.value = "Silakan login terlebih dahulu."
+            return
+        }
+
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+            try {
+                val result = repository.topUpBalance(user.uid, amount)
+                if (result.isSuccess) {
+                    // Refresh user data to show new balance
+                    loadCurrentUser(user.uid)
+                } else {
+                    _error.value = result.exceptionOrNull()?.message ?: "Top-up gagal."
+                }
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Terjadi kesalahan saat top-up."
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+    
     fun login(email: String, password: String) {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
             try {
-                // The authStateListener will handle the result of this
                 auth.signInWithEmailAndPassword(email, password).await()
             } catch (e: Exception) {
                 _error.value = e.message ?: "Login gagal!"
@@ -83,12 +110,12 @@ class AuthViewModel : ViewModel() {
                         uid = firebaseUser.uid,
                         email = firebaseUser.email ?: "",
                         displayName = displayName,
-                        address = "", // Initialize address for new user
+                        address = "",
                         role = role,
-                        umkmId = if (role == "owner") "" else null // Initialize umkmId if owner
+                        umkmId = if (role == "owner") "" else null,
+                        balance = 0.0 // Ensure new users start with 0 balance
                     )
                     usersRef.child(newUser.uid).setValue(newUser).await()
-                    // The authStateListener will set the user, but we can set it here for immediate feedback
                     _currentUser.value = newUser
                     _isRegistered.value = true
                 } else {
@@ -103,7 +130,6 @@ class AuthViewModel : ViewModel() {
     }
 
     fun logout() {
-        // The authStateListener will handle the result of this
         auth.signOut()
     }
 
@@ -121,7 +147,7 @@ class AuthViewModel : ViewModel() {
             viewModelScope.launch {
                 try {
                     usersRef.child(user.uid).child("address").setValue(newAddress).await()
-                    _currentUser.value = user.copy(address = newAddress) // Update local state
+                    _currentUser.value = user.copy(address = newAddress)
                     println("User address updated successfully!")
                 } catch (e: Exception) {
                     _error.value = e.message ?: "Failed to update address."
@@ -138,11 +164,7 @@ class AuthViewModel : ViewModel() {
             val dataSnapshot = usersRef.child(uid).get().await()
             if (dataSnapshot.exists()) {
                 val user = dataSnapshot.getValue(User::class.java)
-                if (user != null) {
-                    _currentUser.value = user
-                } else {
-                    _error.value = "User data found for UID: $uid, but it could not be parsed."
-                }
+                _currentUser.value = user
             } else {
                 _error.value = "User data not found in database for UID: $uid"
             }
