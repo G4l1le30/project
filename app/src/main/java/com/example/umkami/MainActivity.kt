@@ -34,8 +34,10 @@ import com.example.umkami.viewmodel.HomeViewModel
 import com.example.umkami.viewmodel.OwnerDashboardViewModel
 import com.example.umkami.viewmodel.WishlistViewModel
 
+import androidx.activity.enableEdgeToEdge
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContent {
             val navController = rememberNavController()
@@ -52,6 +54,31 @@ class MainActivity : ComponentActivity() {
             val currentRoute = navBackStackEntry?.destination?.route
 
             UmkamiTheme {
+                LaunchedEffect(isAuthenticated, currentUser) {
+                    if (isAuthenticated) {
+                        val user = currentUser
+                        if (user != null) {
+                            if (user.role == "owner") {
+                                navController.navigate("owner_dashboard") {
+                                    popUpTo("splash") { inclusive = true }
+                                }
+                            } else {
+                                navController.navigate("home") {
+                                    popUpTo("splash") { inclusive = true }
+                                }
+                            }
+                        }
+                    } else {
+                        // Check if the current route is not 'login' or 'register' to avoid navigation loops
+                        if (currentRoute != "login" && currentRoute != "register") {
+                            navController.navigate("login") {
+                                popUpTo(navController.graph.startDestinationId) {
+                                    inclusive = true
+                                }
+                            }
+                        }
+                    }
+                }
                 Scaffold(
                     topBar = {
                         if (currentRoute in listOf("home", "wishlist", "cart", "orderHistory", "profile", "address")) {
@@ -71,26 +98,6 @@ class MainActivity : ComponentActivity() {
                     ) {
                         composable("splash") {
                             SplashScreen(navController = navController)
-                            LaunchedEffect(isAuthenticated, currentUser) {
-                                if (isAuthenticated) {
-                                    val user = currentUser
-                                    if (user != null) {
-                                        if (user.role == "owner") {
-                                            navController.navigate("owner_dashboard") {
-                                                popUpTo("splash") { inclusive = true }
-                                            }
-                                        } else {
-                                            navController.navigate("home") {
-                                                popUpTo("splash") { inclusive = true }
-                                            }
-                                        }
-                                    }
-                                 } else {
-                                    navController.navigate("login") {
-                                        popUpTo("splash") { inclusive = true }
-                                    }
-                                }
-                            }
                         }
 
                         composable("login") {

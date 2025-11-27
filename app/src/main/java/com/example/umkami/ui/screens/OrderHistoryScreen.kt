@@ -90,7 +90,7 @@ fun OrderItem(order: Order) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Divider()
+            HorizontalDivider()
             Spacer(modifier = Modifier.height(8.dp))
             order.items.forEach { cartItem ->
                 Row(
@@ -103,7 +103,7 @@ fun OrderItem(order: Order) {
                 Spacer(modifier = Modifier.height(4.dp))
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Divider()
+            HorizontalDivider()
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "Total: Rp ${"%,d".format(order.totalPrice.toInt())}",

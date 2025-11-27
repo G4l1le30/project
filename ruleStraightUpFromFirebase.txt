@@ -1,0 +1,17 @@
+{
+  "rules": {
+    ".read": "true", // IZINKAN BACA DARI SIAPAPUN (Hanya untuk Dev/Test)
+    ".write": "true", // IZINKAN TULIS HANYA JIKA USER LOGIN
+    
+    // Atau lebih spesifik:
+    "umkm": {
+      ".read": "true"
+    },
+    "umkm_menu": {
+      ".read": "true"
+    },
+    "umkm_services": {
+      ".read": "true"
+    }
+  }
+}

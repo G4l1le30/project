@@ -1,6 +1,9 @@
 package com.example.umkami.ui.screens
 
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -11,11 +14,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.example.umkami.data.model.MenuItem
 import com.example.umkami.data.model.ServiceItem
 import com.example.umkami.data.model.Umkm
@@ -26,30 +31,45 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OwnerDashboardScreen(
     navController: NavController,
     authViewModel: AuthViewModel,
-    ownerDashboardViewModel: OwnerDashboardViewModel = viewModel()
+    ownerDashboardViewModel: OwnerDashboardViewModel
 ) {
     val currentUser by authViewModel.currentUser.collectAsState()
-    val umkm by ownerDashboardViewModel.umkm.collectAsState()
-    val menuItemsFromVm by ownerDashboardViewModel.menuItems.collectAsState()
-    val serviceItemsFromVm by ownerDashboardViewModel.serviceItems.collectAsState()
-    val isLoading by ownerDashboardViewModel.isLoading.collectAsState()
+    val umkm: Umkm? by ownerDashboardViewModel.umkm.collectAsState()
+    val menuItemsFromVm: List<MenuItem> by ownerDashboardViewModel.menuItems.collectAsState()
+    val serviceItemsFromVm: List<ServiceItem> by ownerDashboardViewModel.serviceItems.collectAsState()
+    val isLoading: Boolean by ownerDashboardViewModel.isLoading.collectAsState()
     val context = LocalContext.current
+    val imageUrl by ownerDashboardViewModel.imageUrl.collectAsState()
+
 
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("Makanan") }
     var contact by remember { mutableStateOf("") }
-    var lat by remember { mutableStateOf(-7.96) }
-    var lng by remember { mutableStateOf(112.63) }
+    val lat by ownerDashboardViewModel.lat.collectAsState() // Collect lat from ViewModel
+    val lng by ownerDashboardViewModel.lng.collectAsState() // Collect lng from ViewModel
     val menuItems = remember { mutableStateListOf<MenuItem>() }
     val serviceItems = remember { mutableStateListOf<ServiceItem>() }
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            imageUri = it
+            currentUser?.uid?.let { userId ->
+                ownerDashboardViewModel.uploadUmkmImage(it, userId)
+            }
+        }
+    }
 
 
     LaunchedEffect(currentUser) {
@@ -67,8 +87,11 @@ fun OwnerDashboardScreen(
             address = it.address
             category = it.category
             contact = it.contact
-            lat = it.lat
-            lng = it.lng
+            ownerDashboardViewModel.setLat(it.lat)
+            ownerDashboardViewModel.setLng(it.lng)
+            if (it.imageUrl.isNotBlank()){
+                imageUri = Uri.parse(it.imageUrl)
+            }
         }
     }
 
@@ -77,9 +100,20 @@ fun OwnerDashboardScreen(
         menuItems.addAll(menuItemsFromVm)
     }
 
-    LaunchedEffect(serviceItemsFromVm) {
-        serviceItems.clear()
-        serviceItems.addAll(serviceItemsFromVm)
+    LaunchedEffect(address) {
+        if (address.length > 5) { // Start geocoding after a few characters
+            delay(1000L) // Debounce for 1 second
+            ownerDashboardViewModel.geocodeAddress(context, address)
+        }
+    }
+
+    LaunchedEffect(Unit) { // Use Unit as a constant key to launch this effect only once
+        ownerDashboardViewModel.error.collect { errorMessage ->
+            errorMessage?.let {
+                Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+                ownerDashboardViewModel.clearError() // Clear the error after showing
+            }
+        }
     }
 
     Scaffold(
@@ -107,6 +141,27 @@ fun OwnerDashboardScreen(
                     style = MaterialTheme.typography.headlineSmall
                 )
             }
+            item {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    val displayImageUrl = imageUrl.takeIf { it.isNotEmpty() } ?: imageUri?.toString() ?: umkm?.imageUrl
+                    AsyncImage(
+                        model = displayImageUrl,
+                        contentDescription = "UMKM Image",
+                        modifier = Modifier
+                            .size(120.dp)
+                            .padding(8.dp),
+                        contentScale = ContentScale.Crop
+                    )
+
+                    Button(onClick = { imagePickerLauncher.launch("image/*") }) {
+                        Text("Upload Image")
+                    }
+                }
+            }
+
 
             item {
                 OutlinedTextField(
@@ -259,8 +314,8 @@ fun OwnerDashboardScreen(
                 
                 LaunchedEffect(markerState.dragState) {
                     if (markerState.dragState == com.google.maps.android.compose.DragState.END) {
-                        lat = markerState.position.latitude
-                        lng = markerState.position.longitude
+                        ownerDashboardViewModel.setLat(markerState.position.latitude)
+                        ownerDashboardViewModel.setLng(markerState.position.longitude)
                     }
                 }
             }
@@ -274,17 +329,18 @@ fun OwnerDashboardScreen(
                             address = address,
                             category = category,
                             contact = contact,
-                            lat = lat,
-                            lng = lng
+                            lat = lat, // Use lat from ViewModel
+                            lng = lng, // Use lng from ViewModel
+                            imageUrl = imageUrl.ifBlank { umkm?.imageUrl ?: "" }
                         ) ?: Umkm(
                             name = name,
                             description = description,
                             address = address,
                             category = category,
                             contact = contact,
-                            imageUrl = "", // Default image
-                            lat = lat,
-                            lng = lng
+                            imageUrl = imageUrl,
+                            lat = lat, // Use lat from ViewModel
+                            lng = lng // Use lng from ViewModel
                         )
                         currentUser?.uid?.let { userId ->
                             ownerDashboardViewModel.saveUmkm(umkmToSave, userId, menuItems.toList(), serviceItems.toList())
