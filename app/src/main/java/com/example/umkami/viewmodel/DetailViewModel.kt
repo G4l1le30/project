@@ -43,29 +43,30 @@ class DetailViewModel : ViewModel() {
     var reviewRating by mutableStateOf(0)
 
 
-    fun loadUmkmDetails(umkmId: String) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-            try {
-                val umkmDetails = repository.getUmkmById(umkmId)
-                if (umkmDetails != null) {
-                    val menuItems = repository.getUmkmMenu(umkmId)
-                    val serviceItems = repository.getUmkmServices(umkmId)
-                    val reviews = repository.getReviewsByUmkmId(umkmId)
+    suspend fun loadUmkmDetails(umkmId: String): Umkm? {
+        _uiState.value = _uiState.value.copy(isLoading = true)
+        return try {
+            val umkmDetails = repository.getUmkmById(umkmId)
+            if (umkmDetails != null) {
+                val menuItems = repository.getUmkmMenu(umkmId)
+                val serviceItems = repository.getUmkmServices(umkmId)
+                val reviews = repository.getReviewsByUmkmId(umkmId)
 
-                    _uiState.value = DetailUiState(
-                        umkm = umkmDetails,
-                        menu = menuItems,
-                        services = serviceItems,
-                        reviews = reviews,
-                        isLoading = false
-                    )
-                } else {
-                    _uiState.value = DetailUiState(error = "UMKM not found.", isLoading = false)
-                }
-            } catch (e: Exception) {
-                _uiState.value = DetailUiState(error = "Failed to load data: ${e.message}", isLoading = false)
+                _uiState.value = DetailUiState(
+                    umkm = umkmDetails,
+                    menu = menuItems,
+                    services = serviceItems,
+                    reviews = reviews,
+                    isLoading = false
+                )
+                umkmDetails // Return the loaded UMKM
+            } else {
+                _uiState.value = DetailUiState(error = "UMKM not found.", isLoading = false)
+                null // Return null if not found
             }
+        } catch (e: Exception) {
+            _uiState.value = DetailUiState(error = "Failed to load data: ${e.message}", isLoading = false)
+            null // Return null on error
         }
     }
 
@@ -87,7 +88,9 @@ class DetailViewModel : ViewModel() {
             val success = repository.addReview(umkmId, newReview)
             if (success) {
                 // Refresh reviews and clear the form
-                loadUmkmDetails(umkmId) // Reload all details to show the new review
+                // This call should ideally be to a non-suspending loadUmkmDetails or
+                // ensure the context is handled. For now, it's fine in launch.
+                loadUmkmDetails(umkmId) 
                 reviewAuthor = ""
                 reviewComment = ""
                 reviewRating = 0

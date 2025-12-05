@@ -1,5 +1,6 @@
 package com.example.umkami.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.umkami.data.model.Umkm
@@ -21,6 +22,7 @@ class HomeViewModel : ViewModel() {
     private val repository = UmkmRepository()
     private val database: FirebaseDatabase = Firebase.database
     private val userPreferencesRef = database.getReference("user_preferences")
+    private var homeScreenRecommendationsLoaded = false
 
     private val _originalUmkmList = MutableStateFlow<List<Umkm>>(emptyList())
 
@@ -49,6 +51,7 @@ class HomeViewModel : ViewModel() {
     )
 
     init {
+        Log.d("HomeViewModel", "HomeViewModel CREATED")
         loadUmkmList()
     }
 
@@ -89,6 +92,13 @@ class HomeViewModel : ViewModel() {
         }
     }
 
+    fun onHomeScreenReady(uid: String?) {
+        if (homeScreenRecommendationsLoaded) return
+        homeScreenRecommendationsLoaded = true
+        Log.d("HomeViewModel", "onHomeScreenReady triggered. Loading initial recommendations.")
+        loadRecommendedUmkm(uid ?: "")
+    }
+
     fun recordCategoryView(uid: String, category: String) {
         if (uid.isNotBlank() && category.isNotBlank() && category != "All") {
             viewModelScope.launch {
@@ -106,6 +116,7 @@ class HomeViewModel : ViewModel() {
     }
 
     fun loadRecommendedUmkm(uid: String) {
+        Log.d("HomeViewModel", "loadRecommendedUmkm called for UID: $uid")
         viewModelScope.launch {
             if (uid.isBlank()) {
                 _recommendedUmkmList.value = _originalUmkmList.value.shuffled().take(3)

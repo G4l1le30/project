@@ -66,23 +66,39 @@ fun DetailScreen(
     val currentUser by authViewModel.currentUser.collectAsState() // Collect current user
     val isWishlisted by detailViewModel.isWishlisted.collectAsState()
 
-    // Load data and record view when the screen is first composed
-    LaunchedEffect(umkmId, currentUser) {
-        if (umkmId != null) {
-            detailViewModel.loadUmkmDetails(umkmId)
-            currentUser?.uid?.let { userId ->
+    // A single, sequential LaunchedEffect to handle all initial data loading
+    LaunchedEffect(umkmId) {
+        Log.d("DetailScreen", "Running SINGLE LaunchedEffect for umkmId: $umkmId")
+        if (umkmId == null) {
+            Log.d("DetailScreen", "umkmId is null, exiting.")
+            return@LaunchedEffect
+        }
+
+        // Step 1: Load UMKM details and wait for the result
+        Log.d("DetailScreen", "Calling loadUmkmDetails...")
+        val loadedUmkm = detailViewModel.loadUmkmDetails(umkmId)
+        Log.d("DetailScreen", "loadUmkmDetails finished. Result: ${loadedUmkm?.name}")
+
+
+        // Step 2: Once details are loaded, proceed with secondary calls
+        if (loadedUmkm != null) {
+            val user = currentUser // currentUser is already collected as state above
+            Log.d("DetailScreen", "Proceeding with secondary calls for user: ${user?.uid}")
+
+            // Load recommendations
+            if (user != null) {
+                homeViewModel.recordCategoryView(user.uid, loadedUmkm.category)
+                homeViewModel.loadRecommendedUmkm(user.uid)
+            } else {
+                homeViewModel.loadRecommendedUmkm("")
+            }
+
+            // Check wishlist status
+            user?.uid?.let { userId ->
                 detailViewModel.checkIfWishlisted(userId, umkmId)
             }
-        }
-    }
-
-    LaunchedEffect(umkm, currentUser) {
-        val user = currentUser
-        if (umkm != null && user != null) {
-            homeViewModel.recordCategoryView(user.uid, umkm.category)
-            homeViewModel.loadRecommendedUmkm(user.uid) // Trigger loading recommendations after recording view
         } else {
-            homeViewModel.loadRecommendedUmkm("") // Load generic recommendations if no user
+            Log.d("DetailScreen", "loadedUmkm is null, skipping secondary calls.")
         }
     }
 

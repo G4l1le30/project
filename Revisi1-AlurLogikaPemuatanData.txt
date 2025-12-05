@@ -1,0 +1,104 @@
+Judul Revisi: Perbaikan Alur Logika dan Efisiensi Pemuatan Rekomendasi
+
+---
+### 1. Deskripsi Kelemahan
+Aplikasi teridentifikasi memiliki kelemahan performa dan alur logika yang tidak tepat. Fungsi untuk memuat rekomendasi produk (`loadRecommendedUmkm`) dieksekusi secara berlebihan (panggilan ganda) pada dua skenario:
+1.  Saat aplikasi pertama kali dibuka (`HomeScreen`).
+2.  Setiap kali pengguna membuka halaman detail produk (`DetailScreen`).
+
+Ini disebabkan oleh implementasi `LaunchedEffect` yang bergantung pada perubahan `state` (`currentUser`, `umkm`) yang belum stabil saat composable pertama kali dirender. Perubahan `state` dari `null` ke nilai sebenarnya memicu `LaunchedEffect` untuk berjalan kedua kalinya, menyebabkan panggilan API yang boros sumber daya (jaringan, CPU) dan tidak efisien.
+
+---
+### 2. Lokasi Kode & Bukti Screenshot
+*   **Lokasi File Bermasalah:** 
+    *   `app/src/main/java/com/example/umkami/ui/screens/HomeScreen.kt`
+    *   `app/src/main/java/com/example/umkami/ui/screens/DetailScreen.kt`
+*   **Bukti Masalah:** Screenshot Logcat yang menunjukkan `loadRecommendedUmkm` dipanggil dua kali secara berdekatan.
+
+---
+### 3. Solusi Perbaikan & Kode
+Solusi yang diterapkan adalah memperbaiki arsitektur pemanggilan side-effect sesuai dengan praktik terbaik Jetpack Compose, yaitu memindahkan kontrol logika ke `ViewModel` dan membuat alur menjadi lebih dapat diprediksi.
+
+#### A. Perbaikan di `HomeScreen`
+Menggunakan pola *event-driven*. `HomeScreen` hanya memberitahu `HomeViewModel` bahwa ia siap, lalu `HomeViewModel` yang mengontrol agar logika hanya berjalan sekali.
+
+**SEBELUM REVISI (`HomeScreen.kt`):**
+```kotlin
+// Panggilan `loadRecommendedUmkm` langsung dari Composable, rentan terhadap recomposition
+LaunchedEffect(currentUser) {
+    val user = currentUser
+    if (user != null) {
+        homeVm.loadRecommendedUmkm(user.uid)
+    } else {
+        homeVm.loadRecommendedUmkm("")
+    }
+}
+```
+
+**SETELAH REVISI (`HomeViewModel.kt` dan `HomeScreen.kt`):**
+```kotlin
+// 1. Fungsi event-handler ditambahkan di HomeViewModel.kt
+fun onHomeScreenReady(uid: String?) {
+    // Penjaga agar tidak dieksekusi lebih dari sekali
+    if (homeScreenRecommendationsLoaded) return
+    homeScreenRecommendationsLoaded = true
+    loadRecommendedUmkm(uid ?: "")
+}
+
+// 2. LaunchedEffect di HomeScreen.kt hanya memicu event
+LaunchedEffect(currentUser) {
+    homeVm.onHomeScreenReady(currentUser?.uid)
+}
+```
+
+#### B. Perbaikan di `DetailScreen`
+Menggunakan alur sekuensial (berurutan) dengan `suspend function`. Ini menjamin `loadRecommendedUmkm` hanya dipanggil setelah data detail UMKM selesai dimuat.
+
+**SEBELUM REVISI (`DetailScreen.kt`):**
+```kotlin
+// Dua LaunchedEffect terpisah yang menyebabkan race condition
+LaunchedEffect(umkmId, currentUser) {
+    if (umkmId != null) {
+        detailViewModel.loadUmkmDetails(umkmId)
+        // ...
+    }
+}
+
+LaunchedEffect(umkm, currentUser) {
+    // Blok ini berjalan dua kali karena `umkm` berubah dari null ke data
+    if (umkm != null && user != null) {
+        // ...
+        homeViewModel.loadRecommendedUmkm(user.uid) 
+    } else {
+        homeViewModel.loadRecommendedUmkm("")
+    }
+}
+```
+
+**SETELAH REVISI (`DetailViewModel.kt` dan `DetailScreen.kt`):**
+```kotlin
+// 1. Fungsi di DetailViewModel.kt diubah menjadi suspend function
+suspend fun loadUmkmDetails(umkmId: String): Umkm? {
+    // ...logika memuat data...
+    return umkmDetails // Mengembalikan data setelah selesai
+}
+
+// 2. LaunchedEffect di DetailScreen.kt menjadi sekuensial
+LaunchedEffect(umkmId) {
+    if (umkmId == null) return@LaunchedEffect
+
+    // Langkah 1: Panggil & tunggu detail selesai dimuat
+    val loadedUmkm = detailViewModel.loadUmkmDetails(umkmId)
+
+    // Langkah 2: Hanya setelah langkah 1 selesai, jalankan kode ini
+    if (loadedUmkm != null) {
+        val user = currentUser
+        // ...
+        homeViewModel.loadRecommendedUmkm(user.uid)
+        // ...
+    }
+}
+```
+---
+### 4. Bukti Perbaikan
+*   **Bukti:** Screenshot Logcat baru yang menunjukkan `loadRecommendedUmkm` hanya dipanggil **satu kali** di `HomeScreen` dan **satu kali** di `DetailScreen` per sesi, tanpa ada panggilan ganda.

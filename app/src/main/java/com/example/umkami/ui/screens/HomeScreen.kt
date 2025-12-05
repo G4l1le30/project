@@ -44,12 +44,10 @@ fun HomeScreen(
     val currentUser by authVm.currentUser.collectAsState()
 
     LaunchedEffect(currentUser) {
-        val user = currentUser
-        if (user != null) {
-            homeVm.loadRecommendedUmkm(user.uid)
-        } else {
-            homeVm.loadRecommendedUmkm("")
-        }
+        // This will run once when the app starts (with a null user) and again
+        // once the user is resolved. The guard inside the ViewModel will prevent
+        // the logic from running more than once.
+        homeVm.onHomeScreenReady(currentUser?.uid)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
