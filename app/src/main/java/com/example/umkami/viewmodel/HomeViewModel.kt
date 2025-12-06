@@ -1,6 +1,5 @@
 package com.example.umkami.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.umkami.data.model.Umkm
@@ -51,7 +50,6 @@ class HomeViewModel : ViewModel() {
     )
 
     init {
-        Log.d("HomeViewModel", "HomeViewModel CREATED")
         loadUmkmList()
     }
 
@@ -95,7 +93,6 @@ class HomeViewModel : ViewModel() {
     fun onHomeScreenReady(uid: String?) {
         if (homeScreenRecommendationsLoaded) return
         homeScreenRecommendationsLoaded = true
-        Log.d("HomeViewModel", "onHomeScreenReady triggered. Loading initial recommendations.")
         loadRecommendedUmkm(uid ?: "")
     }
 
@@ -116,7 +113,6 @@ class HomeViewModel : ViewModel() {
     }
 
     fun loadRecommendedUmkm(uid: String) {
-        Log.d("HomeViewModel", "loadRecommendedUmkm called for UID: $uid")
         viewModelScope.launch {
             if (uid.isBlank()) {
                 _recommendedUmkmList.value = _originalUmkmList.value.shuffled().take(3)

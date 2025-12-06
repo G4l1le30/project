@@ -1,0 +1,113 @@
+Perbaikan ini mengatasi kelemahan pada logika tombol "Hubungi" dan "WhatsApp" untuk UMKM kategori "Jasa", sesuai kriteria "Alur Logika Kode yang Tidak Tepat".
+
+Kelemahan yang Diidentifikasi:
+1.  Tombol "Hubungi" (telepon biasa) dan tombol "WhatsApp" keduanya menggunakan field `umkm.contact`.
+2.  Data dari database menunjukkan field `contact` berisi nomor telepon format lokal (misal: `0812...`), sementara field `whatsapp` berisi format internasional (`+62812...`).
+3.  Intent WhatsApp (`https://wa.me/...`) umumnya memerlukan nomor format internasional tanpa awalan `+` agar berfungsi optimal. Penggunaan nomor lokal dari field `contact` berpotensi gagal.
+
+Solusi yang Diimplementasikan:
+1.  Logika tombol dipisahkan. Tombol "Hubungi" (telepon) secara konsisten menggunakan `umkm.contact`.
+2.  Tombol "WhatsApp" kini hanya muncul jika field `umkm.whatsapp` tersedia (tidak null atau kosong).
+3.  Tombol "WhatsApp" menggunakan data dari `umkm.whatsapp` dan memformatnya dengan menghapus awalan `+` sebelum membuat link `wa.me`, memastikan fungsionalitas yang benar.
+
+--- BEFORE ---
+File: C:\Users\joshu\Documents\GitHub\project\app\src\main\java\com\example\umkami\ui\screens\DetailScreen.kt
+
+```kotlin
+if (umkm.category.equals("Jasa", ignoreCase = true)) {
+    if (umkm.contact.isNotBlank()) {
+        Log.d("DetailScreen", "Displaying contact buttons for UMKM: ${umkm.name}, Category: ${umkm.category}, Contact: ${umkm.contact}")
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Contact: ${umkm.contact}",
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row {
+            Button(onClick = {
+                val intent = Intent(Intent.ACTION_DIAL).apply {
+                    data = Uri.parse("tel:${umkm.contact}")
+                }
+                context.startActivity(intent)
+            }) {
+                Icon(Icons.Default.Call, contentDescription = "Hubungi UMKM")
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Hubungi")
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Button(onClick = {
+                val intent = Intent(Intent.ACTION_VIEW).apply {
+                    data = Uri.parse("https://wa.me/${umkm.contact}")
+                }
+                context.startActivity(intent)
+            }) {
+                Icon(Icons.Default.Call, contentDescription = "Chat via WhatsApp")
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("WhatsApp")
+            }
+        }
+    } else {
+        Log.d("DetailScreen", "NOT displaying contact buttons for UMKM: ${umkm.name}, Category: ${umkm.category}, Contact: ${umkm.contact}")
+        Text(
+            text = "This is a service-based UMKM, but the contact number is not available.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.error
+        )
+    }
+}
+```
+
+--- AFTER ---
+File: C:\Users\joshu\Documents\GitHub\project\app\src\main\java\com\example\umkami\ui\screens\DetailScreen.kt
+
+```kotlin
+if (umkm.category.equals("Jasa", ignoreCase = true)) {
+    if (umkm.contact.isNotBlank()) {
+        Log.d("DetailScreen", "Displaying contact information for UMKM: ${umkm.name}, Category: ${umkm.category}, Contact: ${umkm.contact}")
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Contact: ${umkm.contact}",
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row {
+            // Call Button (always uses umkm.contact)
+            Button(onClick = {
+                val intent = Intent(Intent.ACTION_DIAL).apply {
+                    data = Uri.parse("tel:${umkm.contact}")
+                }
+                context.startActivity(intent)
+            }) {
+                Icon(Icons.Default.Call, contentDescription = "Hubungi UMKM")
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Hubungi")
+            }
+
+            // WhatsApp Button (uses umkm.whatsapp if available)
+            val whatsappNumber = umkm.whatsapp?.removePrefix("+")
+            if (whatsappNumber?.isNotBlank() == true) {
+                Spacer(modifier = Modifier.width(16.dp))
+                Button(onClick = {
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                        data = Uri.parse("https://wa.me/$whatsappNumber")
+                    }
+                    context.startActivity(intent)
+                }) {
+                    Icon(Icons.Default.Call, contentDescription = "Chat via WhatsApp") // Reusing call icon
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("WhatsApp")
+                }
+            }
+        }
+    } else {
+        Log.d("DetailScreen", "Contact information NOT available for UMKM: ${umkm.name}, Category: ${umkm.category}")
+        Text(
+            text = "This is a service-based UMKM, but the contact number is not available.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.error
+        )
+    }
+}
+```

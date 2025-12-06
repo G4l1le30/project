@@ -1,0 +1,143 @@
+Perbaikan ini mengatasi kelemahan pada form input ulasan (review) sesuai kriteria "Potensi Risiko Keamanan" dan "Fungsi Fitur Tidak Bekerja Maksimal" dari dokumen teknis.
+
+Kelemahan yang Diidentifikasi:
+1.  Tidak ada batasan panjang karakter untuk field "Nama" dan "Ulasan", memungkinkan input yang sangat panjang yang bisa mengganggu UI atau disalahgunakan untuk spam.
+2.  Validasi komentar hanya menggunakan `isNotBlank()`, yang masih bisa diloloskan dengan input spasi.
+3.  Tombol "Submit" tidak mempertimbangkan validasi panjang karakter.
+
+Solusi yang Diimplementasikan:
+1.  Menambahkan validasi panjang maksimum: 50 karakter untuk nama (`author`) dan 200 karakter untuk ulasan (`comment`).
+2.  Menampilkan pesan error dan karakter counter jika input melebihi batas.
+3.  Memperbarui logika tombol "Submit" agar dinonaktifkan jika input melebihi batas panjang.
+4.  Menggunakan `comment.trim().isNotBlank()` untuk memastikan komentar yang hanya berisi spasi dianggap tidak valid.
+
+--- BEFORE ---
+File: C:\Users\joshu\Documents\GitHub\project\app\src\main\java\com\example\umkami\ui\screens\DetailScreen.kt
+
+```kotlin
+@Composable
+fun AddReviewForm(
+    author: String,
+    onAuthorChange: (String) -> Unit,
+    comment: String,
+    onCommentChange: (String) -> Unit,
+    rating: Int,
+    onRatingChange: (Int) -> Unit,
+    onSubmit: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        SectionTitle("Leave a Review")
+
+        OutlinedTextField(
+            value = author,
+            onValueChange = onAuthorChange,
+            label = { Text("Your Name (Optional)") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = comment,
+            onValueChange = onCommentChange,
+            label = { Text("Your Review") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(120.dp)
+        )
+
+        StarRatingInput(rating = rating, onRatingChange = onRatingChange)
+
+        Button(
+            onClick = onSubmit,
+            modifier = Modifier.align(Alignment.End),
+            enabled = comment.isNotBlank() && rating > 0
+        ) {
+            Text("Submit")
+        }
+    }
+}
+```
+
+--- AFTER ---
+File: C:\Users\joshu\Documents\GitHub\project\app\src/main/java/com/example/umkami/ui/screens/DetailScreen.kt
+
+```kotlin
+@Composable
+fun AddReviewForm(
+    author: String,
+    onAuthorChange: (String) -> Unit,
+    comment: String,
+    onCommentChange: (String) -> Unit,
+    rating: Int,
+    onRatingChange: (Int) -> Unit,
+    onSubmit: () -> Unit
+) {
+    val maxAuthorLength = 50
+    val maxCommentLength = 200
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        SectionTitle("Leave a Review")
+
+        OutlinedTextField(
+            value = author,
+            onValueChange = { newValue ->
+                if (newValue.length <= maxAuthorLength) {
+                    onAuthorChange(newValue)
+                }
+            },
+            label = { Text("Your Name (Optional)") },
+            modifier = Modifier.fillMaxWidth(),
+            isError = author.length > maxAuthorLength,
+            supportingText = {
+                if (author.length > maxAuthorLength) {
+                    Text(text = "Max length is $maxAuthorLength characters", color = MaterialTheme.colorScheme.error)
+                }
+            }
+        )
+
+        OutlinedTextField(
+            value = comment,
+            onValueChange = { newValue ->
+                if (newValue.length <= maxCommentLength) {
+                    onCommentChange(newValue)
+                }
+            },
+            label = { Text("Your Review") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(120.dp),
+            isError = comment.length > maxCommentLength,
+            supportingText = {
+                if (comment.length > maxCommentLength) {
+                    Text(text = "Max length is $maxCommentLength characters", color = MaterialTheme.colorScheme.error)
+                }
+            }
+        )
+
+        StarRatingInput(rating = rating, onRatingChange = onRatingChange)
+
+        Button(
+            onClick = onSubmit,
+            modifier = Modifier.align(Alignment.End),
+            enabled = comment.trim().isNotBlank() && rating > 0 && author.length <= maxAuthorLength && comment.length <= maxCommentLength
+        ) {
+            Text("Submit")
+        }
+    }
+}
+```

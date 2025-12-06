@@ -196,7 +196,7 @@ fun DetailScreen(
 
                         if (umkm.category.equals("Jasa", ignoreCase = true)) {
                             if (umkm.contact.isNotBlank()) {
-                                Log.d("DetailScreen", "Displaying contact buttons for UMKM: ${umkm.name}, Category: ${umkm.category}, Contact: ${umkm.contact}")
+                                Log.d("DetailScreen", "Displaying contact information for UMKM: ${umkm.name}, Category: ${umkm.category}, Contact: ${umkm.contact}")
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     text = "Contact: ${umkm.contact}",
@@ -205,6 +205,7 @@ fun DetailScreen(
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Row {
+                                    // Call Button (always uses umkm.contact)
                                     Button(onClick = {
                                         val intent = Intent(Intent.ACTION_DIAL).apply {
                                             data = Uri.parse("tel:${umkm.contact}")
@@ -215,20 +216,25 @@ fun DetailScreen(
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text("Hubungi")
                                     }
-                                    Spacer(modifier = Modifier.width(16.dp))
-                                    Button(onClick = {
-                                        val intent = Intent(Intent.ACTION_VIEW).apply {
-                                            data = Uri.parse("https://wa.me/${umkm.contact}")
+
+                                    // WhatsApp Button (uses umkm.whatsapp if available, else disabled)
+                                    val whatsappNumber = umkm.whatsapp?.removePrefix("+")
+                                    if (whatsappNumber?.isNotBlank() == true) {
+                                        Spacer(modifier = Modifier.width(16.dp))
+                                        Button(onClick = {
+                                            val intent = Intent(Intent.ACTION_VIEW).apply {
+                                                data = Uri.parse("https://wa.me/$whatsappNumber")
+                                            }
+                                            context.startActivity(intent)
+                                        }) {
+                                            Icon(Icons.Default.Call, contentDescription = "Chat via WhatsApp") // Reusing call icon as no specific WhatsApp icon
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text("WhatsApp")
                                         }
-                                        context.startActivity(intent)
-                                    }) {
-                                        Icon(Icons.Default.Call, contentDescription = "Chat via WhatsApp")
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text("WhatsApp")
                                     }
                                 }
                             } else {
-                                Log.d("DetailScreen", "NOT displaying contact buttons for UMKM: ${umkm.name}, Category: ${umkm.category}, Contact: ${umkm.contact}")
+                                Log.d("DetailScreen", "Contact information NOT available for UMKM: ${umkm.name}, Category: ${umkm.category}")
                                 Text(
                                     text = "This is a service-based UMKM, but the contact number is not available.",
                                     style = MaterialTheme.typography.bodyMedium,
@@ -400,6 +406,9 @@ fun AddReviewForm(
     onRatingChange: (Int) -> Unit,
     onSubmit: () -> Unit
 ) {
+    val maxAuthorLength = 50
+    val maxCommentLength = 200
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -413,18 +422,38 @@ fun AddReviewForm(
 
         OutlinedTextField(
             value = author,
-            onValueChange = onAuthorChange,
+            onValueChange = { newValue ->
+                if (newValue.length <= maxAuthorLength) {
+                    onAuthorChange(newValue)
+                }
+            },
             label = { Text("Your Name (Optional)") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            isError = author.length > maxAuthorLength,
+            supportingText = {
+                if (author.length > maxAuthorLength) {
+                    Text(text = "Max length is $maxAuthorLength characters", color = MaterialTheme.colorScheme.error)
+                }
+            }
         )
 
         OutlinedTextField(
             value = comment,
-            onValueChange = onCommentChange,
+            onValueChange = { newValue ->
+                if (newValue.length <= maxCommentLength) {
+                    onCommentChange(newValue)
+                }
+            },
             label = { Text("Your Review") },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(120.dp)
+                .height(120.dp),
+            isError = comment.length > maxCommentLength,
+            supportingText = {
+                if (comment.length > maxCommentLength) {
+                    Text(text = "Max length is $maxCommentLength characters", color = MaterialTheme.colorScheme.error)
+                }
+            }
         )
 
         StarRatingInput(rating = rating, onRatingChange = onRatingChange)
@@ -432,7 +461,7 @@ fun AddReviewForm(
         Button(
             onClick = onSubmit,
             modifier = Modifier.align(Alignment.End),
-            enabled = comment.isNotBlank() && rating > 0
+            enabled = comment.trim().isNotBlank() && rating > 0 && author.length <= maxAuthorLength && comment.length <= maxCommentLength
         ) {
             Text("Submit")
         }

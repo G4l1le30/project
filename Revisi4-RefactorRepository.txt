@@ -1,0 +1,49 @@
+Perbaikan ini mengatasi kelemahan pada penulisan kode di file `UmkmRepository.kt`, sesuai dengan kriteria "Penulisan Kode yang Kurang Baik".
+
+Kelemahan yang Diidentifikasi:
+1.  Banyak fungsi asynchronous untuk mengambil data dari Firebase Realtime Database menggunakan pola `suspendCancellableCoroutine` dengan `ValueEventListener`.
+2.  Pola ini, meskipun berfungsi, cenderung *verbose* (bertele-tele), kurang ringkas, dan tidak sepenuhnya memanfaatkan fitur modern dari Kotlin Coroutines yang terintegrasi dengan Play Services.
+3.  Kode menjadi lebih sulit dibaca dan dipelihara karena banyaknya *boilerplate* untuk menangani `continuation`, `onDataChange`, dan `onCancelled` secara manual.
+
+Solusi yang Diimplementasikan:
+1.  Merefaktor fungsi-fungsi asynchronous untuk menggunakan fungsi ekstensi `.await()` dari library `kotlinx-coroutines-play-services`.
+2.  Mengganti pola `suspendCancellableCoroutine` dengan blok `try-catch` yang lebih sederhana dan idiomatik untuk menangani pemanggilan data dan potensi error.
+3.  Kode menjadi lebih bersih, lebih pendek, dan lebih mudah dibaca, sejalan dengan praktik pengembangan Android modern.
+
+Perubahan ini diterapkan pada semua fungsi pengambilan data yang relevan di dalam `UmkmRepository.kt`, termasuk `getUmkmFromFirebase()`, `getUmkmById()`, `getUmkmMenu()`, `getReviewsByUmkmId()`, dll. Berikut adalah contoh representatif dari perubahan yang dilakukan, menggunakan fungsi `getUmkmById`:
+
+--- BEFORE ---
+File: C:\Users\joshu\Documents\GitHub\project\app\src\main\java\com\example\umkami\data\repository\UmkmRepository.kt
+
+```kotlin
+suspend fun getUmkmById(umkmId: String): Umkm? = suspendCancellableCoroutine { continuation ->
+    dbUmkm.child(umkmId).addListenerForSingleValueEvent(object : ValueEventListener {
+        override fun onDataChange(snapshot: DataSnapshot) {
+            val umkm = snapshot.getValue(Umkm::class.java)
+            if (umkm != null) umkm.id = snapshot.key ?: umkmId
+
+            if (continuation.isActive) continuation.resume(umkm)
+        }
+
+        override fun onCancelled(error: DatabaseError) {
+            if (continuation.isActive) continuation.resume(null)
+        }
+    })
+}
+```
+
+--- AFTER ---
+File: C:\Users\joshu\Documents\GitHub\project\app\src\main\java\com\example\umkami\data\repository\UmkmRepository.kt
+
+```kotlin
+suspend fun getUmkmById(umkmId: String): Umkm? {
+    return try {
+        val snapshot = dbUmkm.child(umkmId).get().await()
+        val umkm = snapshot.getValue(Umkm::class.java)
+        umkm?.apply { id = snapshot.key ?: umkmId }
+    } catch (e: Exception) {
+        Log.e("UmkmRepository", "Error getting UMKM by ID: $e")
+        null
+    }
+}
+```

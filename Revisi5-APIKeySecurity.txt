@@ -1,0 +1,59 @@
+Perbaikan ini mengatasi kelemahan keamanan kritis terkait penyimpanan API key secara langsung (hardcoding) di dalam file proyek, sesuai dengan kriteria "Potensi Risiko Keamanan".
+
+Kelemahan yang Diidentifikasi:
+1.  Google Maps API Key disimpan sebagai teks biasa di dalam file `app/src/main/AndroidManifest.xml`.
+2.  File konfigurasi Firebase, `google-services.json`, yang berisi informasi sensitif, tidak dimasukkan dalam `.gitignore`.
+3.  Menyimpan kunci dan informasi sensitif di dalam *version control* (seperti Git) adalah praktik yang sangat tidak aman karena siapa pun yang memiliki akses ke repositori dapat melihatnya.
+
+Solusi yang Diimplementasikan:
+1.  **Memindahkan API Key:** API Key Google Maps dipindahkan dari `AndroidManifest.xml` ke file `local.properties`. File ini bersifat lokal untuk setiap lingkungan pengembang dan tidak di-commit ke Git.
+2.  **Mengamankan `google-services.json`:** Path file `/app/google-services.json` ditambahkan ke dalam `.gitignore` untuk memastikan file ini tidak lagi dilacak oleh Git.
+3.  **Membaca Key via Gradle:** File `app/build.gradle.kts` dikonfigurasi untuk membaca API key dari `local.properties` pada saat proses *build*.
+4.  **Inject Key ke Manifest:** Gradle menggunakan `manifestPlaceholders` untuk menyuntikkan API key ke dalam `AndroidManifest.xml` secara aman saat aplikasi di-build. Ini menggantikan nilai yang di-*hardcode* dengan sebuah variabel.
+
+Dengan cara ini, API key hanya ada di lingkungan lokal pengembang dan tidak pernah terekspos di repositori kode.
+
+--- BEFORE (`app/src/main/AndroidManifest.xml`) ---
+File: C:\Users\joshu\Documents\GitHub\project\app\src\main\AndroidManifest.xml
+
+```xml
+<meta-data
+    android:name="com.google.android.geo.API_KEY"
+    android:value="YOUR_HARDCODED_API_KEY" />
+```
+
+--- AFTER (`local.properties`) ---
+File: C:\Users\joshu\Documents\GitHub\project\local.properties
+
+```properties
+MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY
+```
+
+--- AFTER (`app/build.gradle.kts`) ---
+File: C:\Users\joshu\Documents\GitHub\project\app\build.gradle.kts
+
+```kotlin
+// Ditambahkan di dalam defaultConfig { ... }
+val localProperties = java.util.Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.inputStream())
+}
+manifestPlaceholders["MAPS_API_KEY"] = localProperties.getProperty("MAPS_API_KEY", "")
+```
+
+--- AFTER (`app/src/main/AndroidManifest.xml`) ---
+File: C:\Users\joshu\Documents\GitHub\project\app\src\main\AndroidManifest.xml
+
+```xml
+<meta-data
+    android:name="com.google.android.geo.API_KEY"
+    android:value="${MAPS_API_KEY}" />
+```
+
+--- AFTER (`.gitignore`) ---
+File: C:\Users\joshu\Documents\GitHub\project\.gitignore
+```
+# ... (file-file lainnya)
+/app/google-services.json
+```

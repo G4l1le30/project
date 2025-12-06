@@ -24,8 +24,8 @@ This is a standard Gradle-based Android project.
     *   Android SDK
 
 2.  **Configuration:**
-    *   The project requires a `google-services.json` file in the `app/` directory to connect to Firebase.
-    *   You will also need a Google Maps API key configured in your `local.properties` file or directly in the `AndroidManifest.xml`.
+    *   The project requires a `google-services.json` file in the `app/` directory to connect to Firebase. This file must not be committed to version control.
+    *   You will also need a Google Maps API key. Create a `local.properties` file in the project root and add `MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY`. An example is provided in `local.properties.example`.
 
 3.  **Building the project:**
     *   Open the project in Android Studio.
@@ -64,56 +64,46 @@ This is a standard Gradle-based Android project.
 *   State management in the UI is handled by `ViewModel`s and collected as state in the composable functions.
 *   The project uses a `libs.versions.toml` file in the `gradle` directory to manage dependencies, which is a recommended practice for modern Android projects.
 
-## Feature Specific Notes
+## Recent Work and Implemented Improvements
 
-*   **Distinction between "Jasa" (Services) and "Benda" (Goods):**
-    *   **"Jasa" (Services):** Based on `PAPBBBB.pdf`, the primary interaction for services is focused on displaying profile information and contact details, implying a discovery and direct contact model rather than an in-app ordering/cart flow. The current implementation in `DetailScreen.kt` reflects this by not offering an "Add to Cart" option for services. It has been noted that the explicit "kontak" (contact) information for services is currently missing in the UI and should be added in future iterations.
-    *   **"Benda" (Goods/Makanan):** For physical goods like food items, `PAPBBBB.pdf` indicates an in-app ordering process through a cart. The current codebase supports this by allowing `MenuItem`s to be added to the cart via `DetailScreen.kt` and managed in `CartViewModel.kt`.
+### 1. Fixing Redundant API Calls (`Performa Aplikasi & Alur Logika Kode`)
 
-## Recent Work: Identifying and Fixing a Performance Weakness (Double API Calls for Recommendations)
+A significant performance and logic flaw was identified where the `homeViewModel.loadRecommendedUmkm` function was being called multiple times unnecessarily on app startup and navigation. This was traced to a `LaunchedEffect` anti-pattern.
 
-### Identified Weakness
+The issue was resolved by implementing an event-driven architecture in the `HomeViewModel` and `DetailViewModel`, ensuring that the recommendation loading logic is executed exactly once per relevant user action, eliminating redundant network calls and improving performance.
 
-A significant performance and logic flaw was identified where the application was making redundant API calls to load recommendations. Specifically, the `homeViewModel.loadRecommendedUmkm` function was being called multiple times unnecessarily:
-*   **On application startup (HomeScreen):** Triggered twice in quick succession.
-*   **Upon navigating to a DetailScreen:** Triggered twice in quick succession.
+### 2. API Key Security Enhancement (`Potensi Risiko Keamanan`)
 
-This behavior led to inefficient resource usage (network, CPU, battery) and a flawed code logic flow, directly addressing the UAP criteria for `Performa aplikasi yang masih dapat ditingkatkan` (Application performance that can still be improved) and `Alur logika kode yang tidak tepat` (Incorrect code logic flow).
+**Weakness:** The Google Maps API Key was hardcoded in `app/src/main/AndroidManifest.xml`, and the `google-services.json` file (containing Firebase keys) was not in `.gitignore`. This is a critical security risk.
 
-### Root Cause Analysis
+**Solution:**
+1.  **API Key Externalization:** The Google Maps API key was moved to the `local.properties` file.
+2.  **Secure Injection:** The `app/build.gradle.kts` file was configured to read the key from `local.properties` and inject it into the manifest at build time using `manifestPlaceholders`.
+3.  **Ignoring Sensitive Files:** The `google-services.json` and `local.properties.example` files were added to `.gitignore`.
+4.  **Documentation:** A `local.properties.example` file was created to guide future developers.
 
-The root cause was traced to a common anti-pattern in Jetpack Compose:
-*   `LaunchedEffect` blocks in both `HomeScreen.kt` and `DetailScreen.kt` were configured to react to changes in state variables like `currentUser` and `umkm`.
-*   During initial composition or when navigating, these state variables would often transition from an initial `null` state to their resolved values.
-*   This state change, while necessary for UI updates, caused the `LaunchedEffect` to cancel and restart, leading to the `homeViewModel.loadRecommendedUmkm` function being invoked multiple times. This created a race condition where the recommendation loading logic was executed redundantly.
+### 3. Corrected WhatsApp Button Logic (`Alur Logika Kode yang Tidak Tepat`)
 
-### Architectural Solution Implemented
+**Weakness:** For "Jasa" (Service) UMKM, both the call button and the WhatsApp button incorrectly used the `umkm.contact` field, which contained a local number format, causing the WhatsApp intent to fail.
 
-To address this, an event-driven architectural pattern was applied, shifting the control of side-effects (API calls) from reactive `LaunchedEffect` triggers to explicit event handlers within the `ViewModel`. This ensures that API calls are made only once per relevant event, regardless of UI recompositions.
+**Solution:**
+1.  The logic in `DetailScreen.kt` was corrected. The regular call button uses `umkm.contact`.
+2.  The WhatsApp button now correctly uses the separate `umkm.whatsapp` field which contains the required international format.
+3.  The WhatsApp button is now only displayed if the `umkm.whatsapp` field is available.
 
-**Key Changes:**
+### 4. Review Form Input Validation (`Potensi Risiko Keamanan`)
 
-1.  **`HomeViewModel.kt`:**
-    *   Introduced a guard flag (`homeScreenRecommendationsLoaded`) and a new public event handler function (`onHomeScreenReady(uid: String?)`).
-    *   This function ensures that the initial recommendation loading logic (`loadRecommendedUmkm`) is executed only once when the `HomeScreen` is ready and the user state is available.
+**Weakness:** The "Leave a Review" form lacked input validation for length and whitespace, creating a risk of UI issues or spam.
 
-2.  **`HomeScreen.kt`:**
-    *   The `LaunchedEffect` was modified to simply call `homeVm.onHomeScreenReady(currentUser?.uid)`, thereby triggering the event in the ViewModel instead of directly invoking API calls.
+**Solution:**
+1.  **Max Length Validation:** A maximum length of 50 characters for the author name and 200 characters for the comment was implemented in `AddReviewForm`.
+2.  **Whitespace Trimming:** The submit button's logic was updated to use `.trim().isNotBlank()` to invalidate comments with only spaces.
+3.  **Button State:** The submit button is now correctly disabled if validation rules are not met.
 
-3.  **`DetailViewModel.kt`:**
-    *   The `loadUmkmDetails(umkmId: String)` function was refactored into a `suspend` function that returns the `Umkm?` object. This allows its caller to `await` its completion.
+### 5. Refactoring Asynchronous Code (`Penulisan Kode yang Kurang Baik`)
 
-4.  **`DetailScreen.kt`:**
-    *   The two separate `LaunchedEffect` blocks were replaced with a single `LaunchedEffect(umkmId)`.
-    *   This single effect sequentially performs the following actions:
-        *   Calls and `await`s the result of `detailViewModel.loadUmkmDetails(umkmId)`.
-        *   Only after the UMKM details are successfully loaded, it proceeds to call secondary actions like `homeViewModel.recordCategoryView` and `homeViewModel.loadRecommendedUmkm`, and `detailViewModel.checkIfWishlisted`.
-    *   This sequential flow guarantees that recommendation loading for the detail screen happens exactly once per unique UMKM visited.
+**Weakness:** Many functions in `UmkmRepository.kt` used a verbose `suspendCancellableCoroutine` pattern for Firebase calls, making the code hard to read.
 
-### Verification and Diagnostic Logging
-
-During the debugging process, extensive diagnostic `Log.d` statements were temporarily added to `HomeViewModel.kt`, `HomeScreen.kt`, and `DetailScreen.kt` to precisely trace the execution flow and identify the root cause of the redundant calls. These logs were instrumental in confirming the `LaunchedEffect` re-execution issue and validating the ViewModel stability. These diagnostic logs are included in the final provided code for further verification by the user.
-
-### Conclusion
-
-The applied changes ensure a robust, efficient, and architecturally sound data loading process for recommendations in both the home and detail screens, eliminating redundant API calls and adhering to best practices for Compose state management and side-effect handling. The project now exhibits improved performance and a corrected code logic flow.
+**Solution:**
+1.  All relevant data-fetching and data-setting functions in `UmkmRepository.kt` were refactored to use the modern `.await()` extension function from the `kotlinx-coroutines-play-services` library.
+2.  This change significantly improved the readability, conciseness, and maintainability of the data layer by replacing legacy callbacks with a cleaner `try-catch` block idiomatic to Kotlin Coroutines.
